@@ -1,0 +1,129 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+<meta charset="UTF-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1.0" />
+<title>Mimos — Painel do Lojista</title>
+<script src="https://cdn.tailwindcss.com"></script>
+<script src="https://unpkg.com/@supabase/supabase-js@2"></script>
+</head>
+<body class="bg-stone-50 text-stone-800 min-h-screen">
+
+  <!-- AUTH -->
+  <section id="auth-view" class="min-h-screen flex items-center justify-center px-4">
+    <div class="w-full max-w-sm bg-white rounded-2xl shadow-sm border border-stone-200 p-8">
+      <h1 class="text-2xl font-bold text-amber-700 mb-1">🎁 Mimos</h1>
+      <p class="text-stone-500 text-sm mb-6">Fidelidade digital para o seu negócio</p>
+      <h2 id="auth-title" class="font-semibold mb-4">Entrar</h2>
+      <form id="login-form" class="space-y-3">
+        <input id="auth-email" type="email" required placeholder="E-mail"
+          class="w-full border border-stone-300 rounded-lg px-3 py-2 focus:outline-none focus:ring-2 focus:ring-amber-400" />
+        <input id="auth-password" type="password" required minlength="6" placeholder="Senha"
+          class="w-full border border-stone-300 rounded-lg px-3 py-2 focus:outline-none focus:ring-2 focus:ring-amber-400" />
+        <button id="auth-submit" type="submit"
+          class="w-full bg-amber-600 hover:bg-amber-700 text-white font-medium rounded-lg py-2 transition">Entrar</button>
+      </form>
+      <p id="auth-error" class="hidden text-sm mt-3"></p>
+      <button id="toggle-auth-mode" data-mode-holder class="text-sm text-amber-700 mt-4 hover:underline">Não tem conta? Criar uma</button>
+      <span id="auth-mode" data-mode="login" class="hidden"></span>
+    </div>
+  </section>
+
+  <!-- CREATE SHOP -->
+  <section id="create-shop-view" class="hidden min-h-screen flex items-center justify-center px-4">
+    <div class="w-full max-w-sm bg-white rounded-2xl shadow-sm border border-stone-200 p-8">
+      <h2 class="text-xl font-bold mb-1">Vamos criar sua loja 🏪</h2>
+      <p class="text-stone-500 text-sm mb-6">Leva menos de 1 minuto.</p>
+      <form id="create-shop-form" class="space-y-3">
+        <input id="shop-name-input" required placeholder="Nome da loja (ex: Café da Esquina)"
+          class="w-full border border-stone-300 rounded-lg px-3 py-2 focus:outline-none focus:ring-2 focus:ring-amber-400" />
+        <p class="text-xs text-stone-400">Link do seu QR Code: /checkin.html?loja=<span id="shop-slug-preview" class="font-mono">sua-loja</span></p>
+        <label class="block text-sm text-stone-600">Pontos por check-in</label>
+        <input id="shop-points-input" type="number" min="1" value="1"
+          class="w-full border border-stone-300 rounded-lg px-3 py-2 focus:outline-none focus:ring-2 focus:ring-amber-400" />
+        <button type="submit" class="w-full bg-amber-600 hover:bg-amber-700 text-white font-medium rounded-lg py-2 transition">Criar loja</button>
+      </form>
+    </div>
+  </section>
+
+  <!-- DASHBOARD -->
+  <section id="dashboard-view" class="hidden max-w-5xl mx-auto px-4 py-8">
+    <header class="flex items-center justify-between mb-8">
+      <div>
+        <p class="text-sm text-stone-500">Painel do lojista</p>
+        <h1 id="dashboard-shop-name" class="text-2xl font-bold text-amber-700"></h1>
+      </div>
+      <button id="logout-btn" class="text-sm text-stone-500 hover:text-rose-600">Sair</button>
+    </header>
+
+    <!-- Stats -->
+    <div class="grid grid-cols-2 gap-4 mb-8">
+      <div class="bg-white rounded-xl border border-stone-200 p-5">
+        <p class="text-sm text-stone-500">Clientes cadastrados</p>
+        <p id="stat-customers" class="text-3xl font-bold">0</p>
+      </div>
+      <div class="bg-white rounded-xl border border-stone-200 p-5">
+        <p class="text-sm text-stone-500">Pontos em circulação</p>
+        <p id="stat-points" class="text-3xl font-bold text-amber-700">0</p>
+      </div>
+    </div>
+
+    <div class="grid md:grid-cols-3 gap-6">
+      <!-- QR Code -->
+      <div class="bg-white rounded-xl border border-stone-200 p-5 md:col-span-1">
+        <h2 class="font-semibold mb-3">📱 QR Code de check-in</h2>
+        <img id="qr-image" alt="QR Code" class="mx-auto rounded-lg border border-stone-100" />
+        <a id="checkin-link" href="#" target="_blank" class="block text-xs text-amber-700 mt-3 break-all hover:underline"></a>
+        <p class="text-xs text-stone-400 mt-2">Imprima e deixe no balcão ou na mesa.</p>
+      </div>
+
+      <!-- Adicionar pontos manualmente -->
+      <div class="bg-white rounded-xl border border-stone-200 p-5 md:col-span-1">
+        <h2 class="font-semibold mb-3">➕ Adicionar pontos</h2>
+        <form id="add-points-form" class="space-y-2">
+          <input id="points-phone" required placeholder="Telefone do cliente"
+            class="w-full border border-stone-300 rounded-lg px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-amber-400" />
+          <input id="points-name" placeholder="Nome (opcional)"
+            class="w-full border border-stone-300 rounded-lg px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-amber-400" />
+          <input id="points-amount" type="number" min="1" placeholder="Pontos (padrão da loja)"
+            class="w-full border border-stone-300 rounded-lg px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-amber-400" />
+          <button type="submit" class="w-full bg-stone-800 hover:bg-stone-900 text-white font-medium rounded-lg py-2 text-sm transition">Registrar</button>
+        </form>
+      </div>
+
+      <!-- Mimos -->
+      <div class="bg-white rounded-xl border border-stone-200 p-5 md:col-span-1">
+        <h2 class="font-semibold mb-3">🎁 Mimos (recompensas)</h2>
+        <form id="reward-form" class="flex gap-2 mb-3">
+          <input id="reward-title" required placeholder="Nome do mimo"
+            class="flex-1 border border-stone-300 rounded-lg px-2 py-1.5 text-sm focus:outline-none focus:ring-2 focus:ring-amber-400" />
+          <input id="reward-points" type="number" min="1" required placeholder="Pts" style="width:70px"
+            class="border border-stone-300 rounded-lg px-2 py-1.5 text-sm focus:outline-none focus:ring-2 focus:ring-amber-400" />
+          <button type="submit" class="bg-amber-600 hover:bg-amber-700 text-white rounded-lg px-3 text-sm">+</button>
+        </form>
+        <ul id="rewards-list" class="text-sm divide-y divide-stone-100"></ul>
+      </div>
+    </div>
+
+    <!-- Clientes -->
+    <div class="bg-white rounded-xl border border-stone-200 p-5 mt-6">
+      <h2 class="font-semibold mb-3">👥 Clientes</h2>
+      <div class="overflow-x-auto">
+        <table class="w-full text-sm">
+          <thead>
+            <tr class="text-left text-stone-400 border-b border-stone-200">
+              <th class="py-2 px-3 font-medium">Nome</th>
+              <th class="py-2 px-3 font-medium">Telefone</th>
+              <th class="py-2 px-3 font-medium text-right">Pontos</th>
+            </tr>
+          </thead>
+          <tbody id="customers-body"></tbody>
+        </table>
+      </div>
+    </div>
+  </section>
+
+  <script src="js/supabase-config.js"></script>
+  <script src="js/dashboard.js"></script>
+</body>
+</html>
