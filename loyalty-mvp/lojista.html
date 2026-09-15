@@ -1,0 +1,227 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+<meta charset="UTF-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1.0" />
+<title>Mimos — Painel do Lojista</title>
+<script>
+  if (localStorage.getItem("theme") === "dark" ||
+      (!("theme" in localStorage) && matchMedia("(prefers-color-scheme: dark)").matches))
+    document.documentElement.classList.add("dark");
+</script>
+<link rel="preconnect" href="https://fonts.googleapis.com" />
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+<link href="https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@400;500;600;700;800&display=swap" rel="stylesheet" />
+<script src="https://cdn.tailwindcss.com"></script>
+<script>tailwind.config = { darkMode: "class" };</script>
+<script src="https://unpkg.com/@supabase/supabase-js@2"></script>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/jsqr/1.4.0/jsQR.js"></script>
+<style>body{font-family:'Plus Jakarta Sans',system-ui,sans-serif}</style>
+</head>
+<body class="bg-slate-50 dark:bg-slate-900 text-slate-800 dark:text-slate-100 min-h-screen transition-colors">
+
+  <div id="loading-view" class="min-h-screen flex items-center justify-center text-slate-400">Carregando...</div>
+
+  <section id="role-guard-view" class="hidden min-h-screen flex items-center justify-center px-4 text-center">
+    <div>
+      <p class="text-lg font-semibold mb-2">Esta área é só para lojistas.</p>
+      <a href="cliente.html" class="text-indigo-600 dark:text-indigo-400 hover:underline">Ir para o app do cliente →</a>
+    </div>
+  </section>
+
+  <!-- CRIAR LOJA -->
+  <section id="create-shop-view" class="hidden min-h-screen flex items-center justify-center px-4">
+    <div class="w-full max-w-sm bg-white dark:bg-slate-800 rounded-2xl shadow-sm border border-slate-200 dark:border-slate-700 p-8">
+      <h2 class="text-xl font-bold mb-1">Vamos criar sua loja 🏪</h2>
+      <p class="text-slate-500 dark:text-slate-400 text-sm mb-6">Leva menos de 1 minuto.</p>
+      <form id="create-shop-form" class="space-y-3">
+        <input id="shop-name-input" required placeholder="Nome da loja (ex: Café da Esquina)"
+          class="w-full border border-slate-300 dark:border-slate-600 bg-white dark:bg-slate-700 rounded-xl px-3.5 py-2.5 text-sm focus:outline-none focus:ring-2 focus:ring-indigo-400" />
+        <p class="text-xs text-slate-400">Identificador: <span id="shop-slug-preview" class="font-mono">sua-loja</span></p>
+        <input id="shop-address-input" placeholder="Endereço (opcional)"
+          class="w-full border border-slate-300 dark:border-slate-600 bg-white dark:bg-slate-700 rounded-xl px-3.5 py-2.5 text-sm focus:outline-none focus:ring-2 focus:ring-indigo-400" />
+        <button type="button" id="use-location-btn" class="text-sm text-indigo-600 dark:text-indigo-400 hover:underline">📍 Usar minha localização atual</button>
+        <p id="location-status" class="text-xs text-slate-400"></p>
+        <label class="block text-sm text-slate-600 dark:text-slate-300">Pontos por visita</label>
+        <input id="shop-points-input" type="number" min="1" value="1"
+          class="w-full border border-slate-300 dark:border-slate-600 bg-white dark:bg-slate-700 rounded-xl px-3.5 py-2.5 text-sm focus:outline-none focus:ring-2 focus:ring-indigo-400" />
+        <button type="submit" class="w-full bg-indigo-600 hover:bg-indigo-700 text-white font-semibold rounded-xl py-2.5 transition">Criar loja</button>
+      </form>
+    </div>
+  </section>
+
+  <!-- DASHBOARD -->
+  <section id="dashboard-view" class="hidden max-w-6xl mx-auto px-4 py-6">
+    <header class="flex flex-wrap items-center justify-between gap-3 mb-6">
+      <div class="flex items-center gap-3">
+        <div class="w-11 h-11 rounded-xl bg-indigo-600 text-white flex items-center justify-center text-xl shadow-sm shadow-indigo-200 dark:shadow-none">🏪</div>
+        <div>
+          <p class="text-xs uppercase tracking-wide text-slate-400 font-semibold">Painel do lojista</p>
+          <h1 id="dashboard-shop-name" class="text-xl font-extrabold text-slate-900 dark:text-white leading-tight"></h1>
+          <p id="dashboard-shop-address" class="text-xs text-slate-400"></p>
+        </div>
+      </div>
+      <div class="flex items-center gap-3">
+        <button id="theme-toggle" title="Alternar tema" class="w-9 h-9 rounded-lg border border-slate-200 dark:border-slate-700 flex items-center justify-center hover:bg-slate-100 dark:hover:bg-slate-800">
+          <span class="dark:hidden">🌙</span><span class="hidden dark:inline">☀️</span>
+        </button>
+        <div class="flex items-center gap-2">
+          <span id="owner-initials" class="w-8 h-8 rounded-full bg-amber-100 dark:bg-amber-500/20 text-amber-700 dark:text-amber-300 text-xs font-bold flex items-center justify-center"></span>
+          <span id="owner-name" class="text-sm font-medium hidden sm:inline"></span>
+        </div>
+        <button id="logout-btn" class="text-sm text-slate-500 hover:text-rose-600">Sair</button>
+      </div>
+    </header>
+
+    <!-- Stats -->
+    <div class="grid grid-cols-2 md:grid-cols-4 gap-4 mb-6">
+      <div class="bg-white dark:bg-slate-800 rounded-2xl border border-slate-200 dark:border-slate-700 p-5 shadow-sm">
+        <div class="w-8 h-8 rounded-lg bg-indigo-50 dark:bg-indigo-500/20 flex items-center justify-center text-indigo-600 dark:text-indigo-300 mb-2">👥</div>
+        <p class="text-xs text-slate-500 dark:text-slate-400">Clientes cadastrados</p>
+        <p id="stat-customers" class="text-2xl font-extrabold text-slate-900 dark:text-white">0</p>
+      </div>
+      <div class="bg-white dark:bg-slate-800 rounded-2xl border border-slate-200 dark:border-slate-700 p-5 shadow-sm">
+        <div class="w-8 h-8 rounded-lg bg-amber-50 dark:bg-amber-500/20 flex items-center justify-center text-amber-600 dark:text-amber-300 mb-2">⭐</div>
+        <p class="text-xs text-slate-500 dark:text-slate-400">Pontos em circulação</p>
+        <p id="stat-points" class="text-2xl font-extrabold text-amber-600 dark:text-amber-400">0</p>
+      </div>
+      <div class="bg-white dark:bg-slate-800 rounded-2xl border border-slate-200 dark:border-slate-700 p-5 shadow-sm">
+        <div class="w-8 h-8 rounded-lg bg-rose-50 dark:bg-rose-500/20 flex items-center justify-center text-rose-600 dark:text-rose-300 mb-2">🎁</div>
+        <p class="text-xs text-slate-500 dark:text-slate-400">Mimos resgatados</p>
+        <p id="stat-rewards-redeemed" class="text-2xl font-extrabold text-slate-900 dark:text-white">0</p>
+      </div>
+      <div class="bg-white dark:bg-slate-800 rounded-2xl border border-slate-200 dark:border-slate-700 p-5 shadow-sm">
+        <div class="w-8 h-8 rounded-lg bg-emerald-50 dark:bg-emerald-500/20 flex items-center justify-center text-emerald-600 dark:text-emerald-300 mb-2">📈</div>
+        <p class="text-xs text-slate-500 dark:text-slate-400">Pontuações hoje</p>
+        <p id="stat-today" class="text-2xl font-extrabold text-slate-900 dark:text-white">0</p>
+      </div>
+    </div>
+
+    <!-- Scanner CTA -->
+    <button id="open-scanner-btn" class="w-full mb-6 bg-indigo-600 hover:bg-indigo-700 text-white font-semibold rounded-2xl py-4 shadow-sm shadow-indigo-200 dark:shadow-none flex items-center justify-center gap-2 transition">
+      <span class="text-xl">📷</span> Escanear QR do cliente
+    </button>
+
+    <div class="grid md:grid-cols-3 gap-6">
+      <!-- Compartilhar loja -->
+      <div class="bg-white dark:bg-slate-800 rounded-2xl border border-slate-200 dark:border-slate-700 p-5 shadow-sm">
+        <h2 class="font-bold mb-1">📣 Convide clientes</h2>
+        <p class="text-xs text-slate-500 dark:text-slate-400 mb-3">Compartilhe esse link ou QR — quem escanear encontra sua loja no app.</p>
+        <img id="share-qr" alt="QR da loja" class="mx-auto rounded-xl border border-slate-100 dark:border-slate-700 mb-3 w-40 h-40" />
+        <a id="share-link" href="#" target="_blank" class="block text-xs text-indigo-600 dark:text-indigo-400 break-all hover:underline mb-3"></a>
+        <button id="copy-link-btn" class="w-full text-sm font-semibold bg-slate-100 dark:bg-slate-700 hover:bg-slate-200 dark:hover:bg-slate-600 rounded-lg py-2">Copiar link</button>
+      </div>
+
+      <!-- Mimos -->
+      <div class="bg-white dark:bg-slate-800 rounded-2xl border border-slate-200 dark:border-slate-700 p-5 shadow-sm">
+        <h2 class="font-bold mb-3">🎁 Mimos (recompensas)</h2>
+        <form id="reward-form" class="flex gap-2 mb-3">
+          <input id="reward-title" required placeholder="Nome do mimo"
+            class="flex-1 border border-slate-300 dark:border-slate-600 bg-white dark:bg-slate-700 rounded-lg px-2.5 py-1.5 text-sm focus:outline-none focus:ring-2 focus:ring-indigo-400" />
+          <input id="reward-points" type="number" min="1" required placeholder="Pts" style="width:70px"
+            class="border border-slate-300 dark:border-slate-600 bg-white dark:bg-slate-700 rounded-lg px-2.5 py-1.5 text-sm focus:outline-none focus:ring-2 focus:ring-indigo-400" />
+          <button type="submit" class="bg-indigo-600 hover:bg-indigo-700 text-white rounded-lg px-3 text-sm font-semibold">+</button>
+        </form>
+        <ul id="rewards-list" class="text-sm divide-y divide-slate-100 dark:divide-slate-700"></ul>
+      </div>
+
+      <!-- Configurações -->
+      <div class="bg-white dark:bg-slate-800 rounded-2xl border border-slate-200 dark:border-slate-700 p-5 shadow-sm">
+        <h2 class="font-bold mb-3">⚙️ Configurações da loja</h2>
+        <form id="settings-form" class="space-y-2">
+          <input id="settings-name" required placeholder="Nome"
+            class="w-full border border-slate-300 dark:border-slate-600 bg-white dark:bg-slate-700 rounded-lg px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-indigo-400" />
+          <input id="settings-address" placeholder="Endereço"
+            class="w-full border border-slate-300 dark:border-slate-600 bg-white dark:bg-slate-700 rounded-lg px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-indigo-400" />
+          <label class="block text-xs text-slate-500 dark:text-slate-400">Pontos por visita</label>
+          <input id="settings-points" type="number" min="1"
+            class="w-full border border-slate-300 dark:border-slate-600 bg-white dark:bg-slate-700 rounded-lg px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-indigo-400" />
+          <div class="flex items-center gap-3">
+            <button type="submit" class="bg-slate-800 dark:bg-indigo-600 hover:bg-slate-900 dark:hover:bg-indigo-700 text-white rounded-lg px-4 py-2 text-sm font-semibold">Salvar</button>
+            <span id="settings-saved" class="hidden text-sm text-emerald-600 dark:text-emerald-400">Salvo ✓</span>
+          </div>
+        </form>
+      </div>
+    </div>
+
+    <!-- Clientes -->
+    <div class="bg-white dark:bg-slate-800 rounded-2xl border border-slate-200 dark:border-slate-700 p-5 shadow-sm mt-6">
+      <div class="flex flex-wrap items-center justify-between gap-3 mb-3">
+        <h2 class="font-bold">👥 Clientes &amp; pontuações</h2>
+        <div class="flex items-center gap-2">
+          <input id="customer-search" placeholder="Buscar por nome ou telefone..."
+            class="border border-slate-300 dark:border-slate-600 bg-white dark:bg-slate-700 rounded-lg px-3 py-1.5 text-sm w-56 focus:outline-none focus:ring-2 focus:ring-indigo-400" />
+          <button id="export-csv-btn" class="text-sm font-semibold bg-slate-100 dark:bg-slate-700 hover:bg-slate-200 dark:hover:bg-slate-600 rounded-lg px-3 py-1.5">⬇ Exportar</button>
+        </div>
+      </div>
+      <div class="overflow-x-auto">
+        <table class="w-full text-sm">
+          <thead>
+            <tr class="text-left text-slate-400 border-b border-slate-200 dark:border-slate-700">
+              <th class="py-2 px-4 font-medium">Cliente</th>
+              <th class="py-2 px-4 font-medium">Telefone</th>
+              <th class="py-2 px-4 font-medium text-right">Pontos</th>
+              <th class="py-2 px-4 font-medium text-right">Ações</th>
+            </tr>
+          </thead>
+          <tbody id="customers-body"></tbody>
+        </table>
+      </div>
+    </div>
+
+    <footer class="text-center text-xs text-slate-400 mt-10 pb-6">Mimos Fidelidade • Tecnologia enxuta para negócios locais</footer>
+  </section>
+
+  <!-- MODAL: Scanner -->
+  <div id="qr-scanner-modal" class="hidden fixed inset-0 bg-slate-900/70 flex items-center justify-center p-4 z-50">
+    <div class="bg-white dark:bg-slate-800 rounded-2xl p-4 w-full max-w-sm">
+      <div class="flex justify-between items-center mb-3">
+        <h3 class="font-bold">Escanear carteira</h3>
+        <button id="qr-scanner-close" class="text-slate-400 hover:text-slate-700 dark:hover:text-slate-200 text-xl leading-none">×</button>
+      </div>
+      <video id="qr-video" class="w-full rounded-xl bg-black aspect-square object-cover"></video>
+      <canvas id="qr-canvas" class="hidden"></canvas>
+      <p id="qr-scanner-status" class="text-sm text-slate-500 dark:text-slate-400 text-center mt-3"></p>
+    </div>
+  </div>
+
+  <!-- MODAL: Ações do cliente (adicionar pontos / resgatar) -->
+  <div id="scan-result" class="hidden fixed inset-0 bg-slate-900/70 flex items-center justify-center p-4 z-50">
+    <div class="bg-white dark:bg-slate-800 rounded-2xl p-6 w-full max-w-sm">
+      <h3 class="font-bold text-lg mb-1" id="scan-customer-name"></h3>
+      <p class="text-sm text-slate-500 dark:text-slate-400 mb-4" id="scan-customer-phone"></p>
+
+      <div class="mb-4">
+        <label class="block text-xs text-slate-500 dark:text-slate-400 mb-1">Adicionar pontos</label>
+        <div class="flex gap-2 mb-2">
+          <input id="scan-add-points" type="number" min="1" class="flex-1 border border-slate-300 dark:border-slate-600 bg-white dark:bg-slate-700 rounded-lg px-3 py-2 text-sm" />
+          <button id="scan-add-btn" class="bg-indigo-600 hover:bg-indigo-700 text-white font-semibold rounded-lg px-4 text-sm">Adicionar</button>
+        </div>
+        <div class="flex gap-1.5">
+          <button data-preset-points="1" class="text-xs font-semibold bg-slate-100 dark:bg-slate-700 hover:bg-slate-200 dark:hover:bg-slate-600 rounded-full px-2.5 py-1">+1</button>
+          <button data-preset-points="2" class="text-xs font-semibold bg-slate-100 dark:bg-slate-700 hover:bg-slate-200 dark:hover:bg-slate-600 rounded-full px-2.5 py-1">+2</button>
+          <button data-preset-points="5" class="text-xs font-semibold bg-slate-100 dark:bg-slate-700 hover:bg-slate-200 dark:hover:bg-slate-600 rounded-full px-2.5 py-1">+5</button>
+        </div>
+      </div>
+
+      <div>
+        <label class="block text-xs text-slate-500 dark:text-slate-400 mb-1">Saldo atual: <span id="scan-balance" class="font-semibold text-indigo-600 dark:text-indigo-300"></span> pontos</label>
+        <div id="scan-rewards-list" class="space-y-1.5 mt-1"></div>
+      </div>
+
+      <button onclick="document.getElementById('scan-result').classList.add('hidden')" class="w-full text-center text-slate-400 text-sm mt-4 hover:underline">Fechar</button>
+    </div>
+  </div>
+  <p id="scan-error" class="hidden fixed top-4 left-1/2 -translate-x-1/2 bg-rose-600 text-white text-sm rounded-lg px-4 py-2 z-50"></p>
+
+  <script src="js/supabase-config.js"></script>
+  <script src="js/qr-scanner.js"></script>
+  <script src="js/lojista.js"></script>
+  <script>
+    document.getElementById("theme-toggle").addEventListener("click", () => {
+      const isDark = document.documentElement.classList.toggle("dark");
+      localStorage.setItem("theme", isDark ? "dark" : "light");
+    });
+  </script>
+</body>
+</html>
