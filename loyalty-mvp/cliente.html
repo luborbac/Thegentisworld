@@ -52,12 +52,42 @@
       </div>
     </header>
 
-    <input id="shop-search" placeholder="Buscar lojas por nome..."
-      class="w-full border border-slate-300 dark:border-slate-600 bg-white dark:bg-slate-800 rounded-xl px-4 py-2.5 text-sm mb-4 focus:outline-none focus:ring-2 focus:ring-indigo-400" />
+    <div class="flex gap-2 mb-5">
+      <button id="tab-dashboard" class="flex-1 text-sm font-semibold rounded-xl py-2.5 transition bg-indigo-600 text-white">📊 Meus Pontos</button>
+      <button id="tab-explore" class="flex-1 text-sm font-semibold rounded-xl py-2.5 transition bg-slate-100 dark:bg-slate-800 text-slate-600 dark:text-slate-300">🗺️ Explorar lojas</button>
+    </div>
 
-    <div id="map" class="mb-4 border border-slate-200 dark:border-slate-700"></div>
+    <!-- DASHBOARD -->
+    <div id="dashboard-section">
+      <div class="grid grid-cols-2 gap-4 mb-5">
+        <div class="bg-white dark:bg-slate-800 rounded-2xl border border-slate-200 dark:border-slate-700 p-5 shadow-sm">
+          <div class="w-8 h-8 rounded-lg bg-amber-50 dark:bg-amber-500/20 flex items-center justify-center text-amber-600 dark:text-amber-300 mb-2">⭐</div>
+          <p class="text-xs text-slate-500 dark:text-slate-400">Pontos totais</p>
+          <p id="dash-total-points" class="text-2xl font-extrabold text-amber-600 dark:text-amber-400">0</p>
+        </div>
+        <div class="bg-white dark:bg-slate-800 rounded-2xl border border-slate-200 dark:border-slate-700 p-5 shadow-sm">
+          <div class="w-8 h-8 rounded-lg bg-indigo-50 dark:bg-indigo-500/20 flex items-center justify-center text-indigo-600 dark:text-indigo-300 mb-2">🏪</div>
+          <p class="text-xs text-slate-500 dark:text-slate-400">Lojas favoritas</p>
+          <p id="dash-shop-count" class="text-2xl font-extrabold text-slate-900 dark:text-white">0</p>
+        </div>
+      </div>
 
-    <div id="shop-list" class="space-y-3"></div>
+      <h2 class="text-sm font-semibold text-slate-600 dark:text-slate-300 mb-2">Minhas lojas</h2>
+      <div id="dash-shops" class="space-y-3 mb-6"></div>
+
+      <h2 class="text-sm font-semibold text-slate-600 dark:text-slate-300 mb-2">Atividade recente</h2>
+      <ul id="dash-activity" class="bg-white dark:bg-slate-800 rounded-2xl border border-slate-200 dark:border-slate-700 px-4 divide-y divide-slate-100 dark:divide-slate-700"></ul>
+    </div>
+
+    <!-- EXPLORAR -->
+    <div id="explore-section" class="hidden">
+      <input id="shop-search" placeholder="Buscar lojas por nome..."
+        class="w-full border border-slate-300 dark:border-slate-600 bg-white dark:bg-slate-800 rounded-xl px-4 py-2.5 text-sm mb-4 focus:outline-none focus:ring-2 focus:ring-indigo-400" />
+
+      <div id="map" class="mb-4 border border-slate-200 dark:border-slate-700"></div>
+
+      <div id="shop-list" class="space-y-3"></div>
+    </div>
   </section>
 
   <!-- MODAL: detalhe da loja -->

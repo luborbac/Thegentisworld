@@ -33,11 +33,88 @@ async function boot() {
   showView("app-view");
 
   initMap();
-  await loadShops();
+  await Promise.all([loadShops(), loadDashboard()]);
   requestGeolocation();
 
   const sharedSlug = new URLSearchParams(location.search).get("loja");
-  if (sharedSlug) openShopDetail(sharedSlug);
+  if (sharedSlug) {
+    showTab("explore");
+    openShopDetail(sharedSlug);
+  }
+}
+
+// ---------- Abas ----------
+function showTab(tab) {
+  $("dashboard-section").classList.toggle("hidden", tab !== "dashboard");
+  $("explore-section").classList.toggle("hidden", tab !== "explore");
+
+  const active = ["bg-indigo-600", "text-white"];
+  const inactive = ["bg-slate-100", "dark:bg-slate-800", "text-slate-600", "dark:text-slate-300"];
+  $("tab-dashboard").classList.remove(...active, ...inactive);
+  $("tab-explore").classList.remove(...active, ...inactive);
+  $("tab-dashboard").classList.add(...(tab === "dashboard" ? active : inactive));
+  $("tab-explore").classList.add(...(tab === "explore" ? active : inactive));
+
+  if (tab === "explore") setTimeout(() => map.invalidateSize(), 50);
+}
+$("tab-dashboard").addEventListener("click", () => showTab("dashboard"));
+$("tab-explore").addEventListener("click", () => showTab("explore"));
+
+// ---------- Dashboard: meus pontos ----------
+async function loadDashboard() {
+  const { data: balances } = await supabaseClient.rpc("get_my_shop_balances");
+  const myShops = balances || [];
+
+  $("dash-total-points").textContent = myShops.reduce((sum, b) => sum + b.balance, 0);
+  $("dash-shop-count").textContent = myShops.length;
+
+  const shopIds = myShops.map((b) => b.shop_id);
+  const { data: rewards } = shopIds.length
+    ? await supabaseClient.from("rewards").select("*").in("shop_id", shopIds).eq("active", true)
+    : { data: [] };
+
+  $("dash-shops").innerHTML = myShops.map((b) => {
+    const shopRewards = (rewards || []).filter((r) => r.shop_id === b.shop_id).sort((x, y) => x.points_required - y.points_required);
+    const next = shopRewards.find((r) => r.points_required > b.balance);
+    let progressHtml = "";
+    if (next) {
+      const pct = Math.min(100, Math.round((b.balance / next.points_required) * 100));
+      progressHtml = `
+        <div class="mt-2">
+          <div class="flex justify-between text-xs text-slate-500 dark:text-slate-400 mb-1">
+            <span>Próximo: ${next.title}</span><span>${b.balance}/${next.points_required} pts</span>
+          </div>
+          <div class="h-2 bg-slate-100 dark:bg-slate-700 rounded-full overflow-hidden">
+            <div class="h-full bg-indigo-500" style="width:${pct}%"></div>
+          </div>
+        </div>`;
+    } else if (shopRewards.length) {
+      progressHtml = `<p class="text-xs text-emerald-600 dark:text-emerald-400 mt-2">🎉 Todos os mimos disponíveis!</p>`;
+    }
+    return `
+      <button data-slug="${b.shop_slug}" class="dash-shop-card w-full text-left bg-white dark:bg-slate-800 rounded-2xl border border-slate-200 dark:border-slate-700 p-4 hover:border-indigo-300 dark:hover:border-indigo-500 transition">
+        <div class="flex items-center justify-between">
+          <p class="font-semibold text-slate-800 dark:text-slate-100">${b.shop_name}</p>
+          <span class="text-sm font-bold text-amber-600 dark:text-amber-400">${b.balance} pts</span>
+        </div>
+        ${progressHtml}
+      </button>`;
+  }).join("") ||
+    `<p class="text-center text-slate-400 dark:text-slate-500 py-8 bg-white dark:bg-slate-800 rounded-2xl border border-slate-200 dark:border-slate-700">Você ainda não é cliente de nenhuma loja.<br>Peça pro lojista escanear sua carteira (🪪) na primeira visita!</p>`;
+
+  $("dash-shops").querySelectorAll(".dash-shop-card").forEach((btn) =>
+    btn.addEventListener("click", () => { showTab("explore"); openShopDetail(btn.dataset.slug); }),
+  );
+
+  const shopNameById = Object.fromEntries(myShops.map((b) => [b.shop_id, b.shop_name]));
+  const { data: recentTx } = await supabaseClient
+    .from("point_transactions").select("*").eq("customer_id", me.id).order("created_at", { ascending: false }).limit(10);
+
+  $("dash-activity").innerHTML = (recentTx || []).map((t) => `
+      <li class="flex items-center justify-between py-2.5 text-sm">
+        <span class="text-slate-600 dark:text-slate-300">${shopNameById[t.shop_id] || "Loja"}${t.reward_id ? " · resgate de mimo" : ""}</span>
+        <span class="font-semibold ${t.points >= 0 ? "text-emerald-600 dark:text-emerald-400" : "text-rose-600 dark:text-rose-400"}">${t.points >= 0 ? "+" : ""}${t.points}</span>
+      </li>`).join("") || `<li class="text-center text-slate-400 dark:text-slate-500 py-6 text-sm">Nenhuma atividade ainda.</li>`;
 }
 
 $("logout-btn").addEventListener("click", async () => {

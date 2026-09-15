@@ -2,6 +2,18 @@
 
 Histórico de versões do projeto, com o que mudou e por quê. Datas em UTC.
 
+## v2.2 — Mimos elegíveis no scan + dashboard do cliente (2026-09-15)
+
+**Motivação:** ao escanear o QR do cliente, o lojista via só um dropdown genérico de mimos, sem saber quais o cliente já podia resgatar. E o app do cliente só tinha o mapa — sem visão geral de pontos.
+
+- Nova RPC `get_my_shop_balances()`: o próprio cliente consulta seu saldo em cada loja da qual é membro (nome/slug incluídos), sem expor a tabela `shops` crua.
+- Painel do lojista: ao escanear a carteira, o saldo atual do cliente aparece junto com a lista de mimos da loja — os que ele já pode trocar ficam destacados e clicáveis ("🎁 Resgatar →"), os demais mostram quanto falta ("🔒 faltam N pts"). Substitui o antigo `<select>` genérico.
+- App do cliente: nova aba "📊 Meus Pontos" (dashboard), separada de "🗺️ Explorar lojas" (mapa/busca, como antes):
+  - Pontos totais e número de lojas das quais é cliente.
+  - Card por loja com saldo e barra de progresso até o próximo mimo desbloqueável.
+  - Extrato das últimas 10 movimentações de pontos (ganho/resgate, por loja).
+  - Abrir a loja a partir do dashboard leva à mesma tela de detalhe já existente (aba Explorar).
+
 ## v2.1 — Redesign visual + funcionalidades do painel (2026-09-15)
 
 **Motivação:** o painel funcional (v2) estava feio/genérico; era preciso um visual "moderno e sofisticado" e faltava fechar pontas do painel do lojista.

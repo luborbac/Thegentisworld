@@ -237,15 +237,49 @@ async function handleScanResult(walletCode) {
   openCustomerActions({ customer_id: customer.customer_id, name: customer.name, phone: customer.phone, walletCode });
 }
 
-function openCustomerActions({ customer_id, name, phone, walletCode }) {
+async function openCustomerActions({ customer_id, name, phone, walletCode }) {
   actionsCustomer = { customer_id, name, phone, walletCode };
   $("scan-customer-name").textContent = name || "Cliente";
   $("scan-customer-phone").textContent = phone || "";
   $("scan-add-points").value = currentShop.points_per_checkin;
-  $("scan-reward-select").innerHTML =
-    `<option value="">Trocar por um mimo...</option>` +
-    activeRewards.map((r) => `<option value="${r.id}">${r.title} (${r.points_required} pts)</option>`).join("");
+
+  const { data: balanceRow } = await supabaseClient
+    .from("customer_balances").select("balance").eq("shop_id", currentShop.id).eq("customer_id", customer_id).maybeSingle();
+  const balance = balanceRow?.balance || 0;
+  $("scan-balance").textContent = balance;
+
+  renderScanRewards(balance);
   $("scan-result").classList.remove("hidden");
+}
+
+function renderScanRewards(balance) {
+  $("scan-rewards-list").innerHTML = activeRewards.map((r) => {
+    const eligible = balance >= r.points_required;
+    return `
+      <button data-reward-id="${r.id}" ${eligible ? "" : "disabled"}
+        class="w-full flex items-center justify-between text-sm rounded-lg px-3 py-2 border transition ${
+          eligible
+            ? "border-amber-300 dark:border-amber-500/50 bg-amber-50 dark:bg-amber-500/10 hover:bg-amber-100 dark:hover:bg-amber-500/20 text-amber-800 dark:text-amber-300 cursor-pointer"
+            : "border-slate-200 dark:border-slate-700 text-slate-400 dark:text-slate-500 cursor-not-allowed"
+        }">
+        <span>${eligible ? "🎁" : "🔒"} ${r.title}</span>
+        <span class="font-semibold">${eligible ? "Resgatar →" : `faltam ${r.points_required - balance} pts`}</span>
+      </button>`;
+  }).join("") || `<p class="text-sm text-slate-400 dark:text-slate-500 text-center py-2">Nenhum mimo cadastrado ainda.</p>`;
+
+  $("scan-rewards-list").querySelectorAll("[data-reward-id]:not([disabled])").forEach((btn) =>
+    btn.addEventListener("click", () => redeemReward(btn.dataset.rewardId)),
+  );
+}
+
+async function redeemReward(rewardId) {
+  const { error } = await supabaseClient.rpc("redeem_reward_via_scan", {
+    p_wallet_code: actionsCustomer.walletCode, p_shop_id: currentShop.id, p_reward_id: rewardId,
+  });
+  if (error) return alert("Erro: " + error.message);
+  $("scan-result").classList.add("hidden");
+  loadCustomers();
+  loadStats();
 }
 
 document.querySelectorAll("[data-preset-points]").forEach((btn) =>
@@ -260,18 +294,6 @@ $("scan-add-btn").addEventListener("click", async () => {
   if (error) return alert("Erro: " + error.message);
   $("scan-result").classList.add("hidden");
   loadCustomers();
-});
-
-$("scan-redeem-btn").addEventListener("click", async () => {
-  const rewardId = $("scan-reward-select").value;
-  if (!rewardId) return alert("Escolha um mimo para resgatar.");
-  const { error } = await supabaseClient.rpc("redeem_reward_via_scan", {
-    p_wallet_code: actionsCustomer.walletCode, p_shop_id: currentShop.id, p_reward_id: rewardId,
-  });
-  if (error) return alert("Erro: " + error.message);
-  $("scan-result").classList.add("hidden");
-  loadCustomers();
-  loadStats();
 });
 
 boot();

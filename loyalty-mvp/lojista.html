@@ -205,9 +205,8 @@
       </div>
 
       <div>
-        <label class="block text-xs text-slate-500 dark:text-slate-400 mb-1">Resgatar mimo</label>
-        <select id="scan-reward-select" class="w-full border border-slate-300 dark:border-slate-600 bg-white dark:bg-slate-700 rounded-lg px-3 py-2 text-sm mb-2"></select>
-        <button id="scan-redeem-btn" class="w-full bg-amber-500 hover:bg-amber-600 text-white font-semibold rounded-lg py-2 text-sm">Resgatar</button>
+        <label class="block text-xs text-slate-500 dark:text-slate-400 mb-1">Saldo atual: <span id="scan-balance" class="font-semibold text-indigo-600 dark:text-indigo-300"></span> pontos</label>
+        <div id="scan-rewards-list" class="space-y-1.5 mt-1"></div>
       </div>
 
       <button onclick="document.getElementById('scan-result').classList.add('hidden')" class="w-full text-center text-slate-400 text-sm mt-4 hover:underline">Fechar</button>
