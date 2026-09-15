@@ -4,55 +4,65 @@
 <meta charset="UTF-8" />
 <meta name="viewport" content="width=device-width, initial-scale=1.0" />
 <title>Mimos — Fidelidade Local</title>
+<script>
+  if (localStorage.getItem("theme") === "dark" ||
+      (!("theme" in localStorage) && matchMedia("(prefers-color-scheme: dark)").matches))
+    document.documentElement.classList.add("dark");
+</script>
 <link rel="preconnect" href="https://fonts.googleapis.com" />
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
 <link href="https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@400;500;600;700;800&display=swap" rel="stylesheet" />
 <script src="https://cdn.tailwindcss.com"></script>
+<script>tailwind.config = { darkMode: "class" };</script>
 <script src="https://unpkg.com/@supabase/supabase-js@2"></script>
 <style>body{font-family:'Plus Jakarta Sans',system-ui,sans-serif}</style>
 </head>
-<body class="min-h-screen bg-gradient-to-b from-indigo-50 via-white to-white text-slate-800">
+<body class="min-h-screen bg-gradient-to-b from-indigo-50 via-white to-white dark:from-slate-900 dark:via-slate-900 dark:to-slate-950 text-slate-800 dark:text-slate-100 transition-colors">
+
+  <button id="theme-toggle" title="Alternar tema" class="fixed top-4 right-4 w-9 h-9 rounded-lg border border-slate-200 dark:border-slate-700 bg-white/70 dark:bg-slate-800/70 backdrop-blur flex items-center justify-center hover:bg-slate-100 dark:hover:bg-slate-800 z-10">
+    <span class="dark:hidden">🌙</span><span class="hidden dark:inline">☀️</span>
+  </button>
 
   <div id="loading-view" class="min-h-screen flex items-center justify-center text-slate-400">Carregando...</div>
 
   <main class="hidden min-h-screen flex flex-col items-center px-4 py-12" id="landing">
     <div class="w-full max-w-md">
       <div class="text-center mb-8">
-        <div class="inline-flex items-center justify-center w-16 h-16 rounded-2xl bg-indigo-600 text-white text-3xl shadow-lg shadow-indigo-200 mb-4">🎁</div>
-        <h1 class="text-3xl font-extrabold tracking-tight text-slate-900">Mimos</h1>
-        <p class="text-slate-500 mt-1">Fidelidade digital para negócios locais</p>
+        <div class="inline-flex items-center justify-center w-16 h-16 rounded-2xl bg-indigo-600 text-white text-3xl shadow-lg shadow-indigo-200 dark:shadow-none mb-4">🎁</div>
+        <h1 class="text-3xl font-extrabold tracking-tight text-slate-900 dark:text-white">Mimos</h1>
+        <p class="text-slate-500 dark:text-slate-400 mt-1">Fidelidade digital para negócios locais</p>
       </div>
 
-      <p class="text-sm font-medium text-slate-600 mb-3 text-center">Como você quer entrar?</p>
+      <p class="text-sm font-medium text-slate-600 dark:text-slate-300 mb-3 text-center">Como você quer entrar?</p>
       <div class="grid grid-cols-2 gap-3 mb-6">
-        <button id="role-lojista" class="rounded-2xl bg-white border border-slate-200 p-5 text-center hover:border-indigo-300 transition ring-offset-2">
+        <button id="role-lojista" class="rounded-2xl bg-white dark:bg-slate-800 border border-slate-200 dark:border-slate-700 p-5 text-center hover:border-indigo-300 dark:hover:border-indigo-500 transition ring-offset-2">
           <div class="text-3xl mb-2">🏪</div>
-          <div class="font-semibold text-slate-800">Sou lojista</div>
-          <div class="text-xs text-slate-500 mt-1">Gerenciar minha loja</div>
+          <div class="font-semibold text-slate-800 dark:text-slate-100">Sou lojista</div>
+          <div class="text-xs text-slate-500 dark:text-slate-400 mt-1">Gerenciar minha loja</div>
         </button>
-        <button id="role-cliente" class="rounded-2xl bg-white border border-slate-200 p-5 text-center hover:border-indigo-300 transition ring-offset-2">
+        <button id="role-cliente" class="rounded-2xl bg-white dark:bg-slate-800 border border-slate-200 dark:border-slate-700 p-5 text-center hover:border-indigo-300 dark:hover:border-indigo-500 transition ring-offset-2">
           <div class="text-3xl mb-2">🙋</div>
-          <div class="font-semibold text-slate-800">Sou cliente</div>
-          <div class="text-xs text-slate-500 mt-1">Juntar pontos e mimos</div>
+          <div class="font-semibold text-slate-800 dark:text-slate-100">Sou cliente</div>
+          <div class="text-xs text-slate-500 dark:text-slate-400 mt-1">Juntar pontos e mimos</div>
         </button>
       </div>
 
-      <div id="auth-card" class="hidden bg-white rounded-2xl shadow-sm border border-slate-200 p-6">
+      <div id="auth-card" class="hidden bg-white dark:bg-slate-800 rounded-2xl shadow-sm border border-slate-200 dark:border-slate-700 p-6">
         <h2 id="auth-title" class="font-bold text-lg mb-4">Entrar</h2>
         <form id="auth-form" class="space-y-3">
           <div id="signup-extra" class="hidden space-y-3">
-            <input id="auth-name" placeholder="Seu nome" class="w-full border border-slate-300 rounded-xl px-3.5 py-2.5 text-sm focus:outline-none focus:ring-2 focus:ring-indigo-400" />
-            <input id="auth-phone" placeholder="Telefone" class="w-full border border-slate-300 rounded-xl px-3.5 py-2.5 text-sm focus:outline-none focus:ring-2 focus:ring-indigo-400" />
+            <input id="auth-name" placeholder="Seu nome" class="w-full border border-slate-300 dark:border-slate-600 bg-white dark:bg-slate-700 rounded-xl px-3.5 py-2.5 text-sm focus:outline-none focus:ring-2 focus:ring-indigo-400" />
+            <input id="auth-phone" placeholder="Telefone" class="w-full border border-slate-300 dark:border-slate-600 bg-white dark:bg-slate-700 rounded-xl px-3.5 py-2.5 text-sm focus:outline-none focus:ring-2 focus:ring-indigo-400" />
           </div>
           <input id="auth-email" type="email" required placeholder="E-mail"
-            class="w-full border border-slate-300 rounded-xl px-3.5 py-2.5 text-sm focus:outline-none focus:ring-2 focus:ring-indigo-400" />
+            class="w-full border border-slate-300 dark:border-slate-600 bg-white dark:bg-slate-700 rounded-xl px-3.5 py-2.5 text-sm focus:outline-none focus:ring-2 focus:ring-indigo-400" />
           <input id="auth-password" type="password" required minlength="6" placeholder="Senha"
-            class="w-full border border-slate-300 rounded-xl px-3.5 py-2.5 text-sm focus:outline-none focus:ring-2 focus:ring-indigo-400" />
+            class="w-full border border-slate-300 dark:border-slate-600 bg-white dark:bg-slate-700 rounded-xl px-3.5 py-2.5 text-sm focus:outline-none focus:ring-2 focus:ring-indigo-400" />
           <button id="auth-submit" type="submit"
-            class="w-full bg-indigo-600 hover:bg-indigo-700 text-white font-semibold rounded-xl py-2.5 transition shadow-sm shadow-indigo-200">Entrar</button>
+            class="w-full bg-indigo-600 hover:bg-indigo-700 text-white font-semibold rounded-xl py-2.5 transition shadow-sm shadow-indigo-200 dark:shadow-none">Entrar</button>
         </form>
         <p id="auth-error" class="hidden text-sm mt-3"></p>
-        <button id="toggle-auth-mode" class="text-sm text-indigo-600 mt-4 hover:underline">Não tem conta? Criar uma</button>
+        <button id="toggle-auth-mode" class="text-sm text-indigo-600 dark:text-indigo-400 mt-4 hover:underline">Não tem conta? Criar uma</button>
         <span id="auth-mode" data-mode="login" class="hidden"></span>
       </div>
     </div>
@@ -60,5 +70,11 @@
 
   <script src="js/supabase-config.js"></script>
   <script src="js/auth.js"></script>
+  <script>
+    document.getElementById("theme-toggle").addEventListener("click", () => {
+      const isDark = document.documentElement.classList.toggle("dark");
+      localStorage.setItem("theme", isDark ? "dark" : "light");
+    });
+  </script>
 </body>
 </html>

@@ -35,6 +35,9 @@ async function boot() {
   initMap();
   await loadShops();
   requestGeolocation();
+
+  const sharedSlug = new URLSearchParams(location.search).get("loja");
+  if (sharedSlug) openShopDetail(sharedSlug);
 }
 
 $("logout-btn").addEventListener("click", async () => {
@@ -97,16 +100,16 @@ function renderShopList(shops) {
   withDistance.sort((a, b) => (a.distanceKm ?? Infinity) - (b.distanceKm ?? Infinity));
 
   $("shop-list").innerHTML = withDistance.map((s) => `
-      <button data-slug="${s.slug}" class="shop-card w-full text-left bg-white rounded-2xl border border-slate-200 p-4 hover:border-indigo-300 hover:shadow-sm transition">
+      <button data-slug="${s.slug}" class="shop-card w-full text-left bg-white dark:bg-slate-800 rounded-2xl border border-slate-200 dark:border-slate-700 p-4 hover:border-indigo-300 dark:hover:border-indigo-500 hover:shadow-sm transition">
         <div class="flex items-start justify-between gap-2">
           <div>
-            <p class="font-semibold text-slate-800">${s.name}</p>
-            <p class="text-sm text-slate-500">${s.address || "Endereço não informado"}</p>
+            <p class="font-semibold text-slate-800 dark:text-slate-100">${s.name}</p>
+            <p class="text-sm text-slate-500 dark:text-slate-400">${s.address || "Endereço não informado"}</p>
           </div>
-          ${s.distanceKm != null ? `<span class="shrink-0 text-xs font-medium bg-indigo-50 text-indigo-700 rounded-full px-2.5 py-1">${s.distanceKm.toFixed(1)} km</span>` : ""}
+          ${s.distanceKm != null ? `<span class="shrink-0 text-xs font-medium bg-indigo-50 dark:bg-indigo-500/20 text-indigo-700 dark:text-indigo-300 rounded-full px-2.5 py-1">${s.distanceKm.toFixed(1)} km</span>` : ""}
         </div>
       </button>`).join("") ||
-    `<p class="text-center text-slate-400 py-8">Nenhuma loja encontrada.</p>`;
+    `<p class="text-center text-slate-400 dark:text-slate-500 py-8">Nenhuma loja encontrada.</p>`;
 
   document.querySelectorAll(".shop-card").forEach((btn) =>
     btn.addEventListener("click", () => openShopDetail(btn.dataset.slug)),
@@ -132,10 +135,10 @@ async function openShopDetail(slug) {
   $("detail-description").textContent = shop.description || "";
   $("detail-balance").textContent = balanceRow ? `Você tem ${balanceRow.balance} pontos aqui` : "Você ainda não é cliente desta loja";
   $("detail-rewards").innerHTML = (rewards || []).map((r) => `
-      <li class="flex items-center justify-between py-2 border-b border-slate-100 last:border-0">
+      <li class="flex items-center justify-between py-2 border-b border-slate-100 dark:border-slate-700 last:border-0">
         <span>${r.title}</span>
-        <span class="text-sm font-semibold text-indigo-700">${r.points_required} pts</span>
-      </li>`).join("") || `<li class="text-slate-400 py-2">Nenhum mimo cadastrado ainda.</li>`;
+        <span class="text-sm font-semibold text-indigo-700 dark:text-indigo-300">${r.points_required} pts</span>
+      </li>`).join("") || `<li class="text-slate-400 dark:text-slate-500 py-2">Nenhum mimo cadastrado ainda.</li>`;
 
   $("shop-detail-modal").classList.remove("hidden");
 }

@@ -4,37 +4,48 @@
 <meta charset="UTF-8" />
 <meta name="viewport" content="width=device-width, initial-scale=1.0" />
 <title>Mimos — App do Cliente</title>
+<script>
+  if (localStorage.getItem("theme") === "dark" ||
+      (!("theme" in localStorage) && matchMedia("(prefers-color-scheme: dark)").matches))
+    document.documentElement.classList.add("dark");
+</script>
 <link rel="preconnect" href="https://fonts.googleapis.com" />
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
 <link href="https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@400;500;600;700;800&display=swap" rel="stylesheet" />
 <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/leaflet/1.9.4/leaflet.css" />
 <script src="https://cdn.tailwindcss.com"></script>
+<script>tailwind.config = { darkMode: "class" };</script>
 <script src="https://unpkg.com/@supabase/supabase-js@2"></script>
 <script src="https://cdnjs.cloudflare.com/ajax/libs/leaflet/1.9.4/leaflet.js"></script>
 <style>
   body{font-family:'Plus Jakarta Sans',system-ui,sans-serif}
   #map{height:280px;border-radius:1rem;z-index:0}
+  html.dark .leaflet-popup-content-wrapper,html.dark .leaflet-popup-tip{background:#1e293b;color:#e2e8f0}
+  html.dark .leaflet-tile{filter:brightness(0.85) invert(1) contrast(0.85) hue-rotate(180deg) saturate(0.6);}
 </style>
 </head>
-<body class="bg-slate-50 text-slate-800 min-h-screen">
+<body class="bg-slate-50 dark:bg-slate-900 text-slate-800 dark:text-slate-100 min-h-screen transition-colors">
 
   <div id="loading-view" class="min-h-screen flex items-center justify-center text-slate-400">Carregando...</div>
 
   <section id="role-guard-view" class="hidden min-h-screen flex items-center justify-center px-4 text-center">
     <div>
       <p class="text-lg font-semibold mb-2">Esta área é só para clientes.</p>
-      <a href="lojista.html" class="text-indigo-600 hover:underline">Ir para o painel do lojista →</a>
+      <a href="lojista.html" class="text-indigo-600 dark:text-indigo-400 hover:underline">Ir para o painel do lojista →</a>
     </div>
   </section>
 
   <section id="app-view" class="hidden max-w-3xl mx-auto px-4 py-6">
     <header class="flex items-center justify-between mb-5">
       <div>
-        <p class="text-sm text-slate-500">Mimos 🎁</p>
-        <h1 id="greeting" class="text-xl font-extrabold text-slate-900"></h1>
+        <p class="text-sm text-slate-500 dark:text-slate-400">Mimos 🎁</p>
+        <h1 id="greeting" class="text-xl font-extrabold text-slate-900 dark:text-white"></h1>
       </div>
-      <div class="flex items-center gap-3">
-        <button id="wallet-btn" class="bg-indigo-600 hover:bg-indigo-700 text-white text-sm font-semibold rounded-xl px-4 py-2 shadow-sm shadow-indigo-200">
+      <div class="flex items-center gap-2">
+        <button id="theme-toggle" title="Alternar tema" class="w-9 h-9 rounded-lg border border-slate-200 dark:border-slate-700 flex items-center justify-center hover:bg-slate-100 dark:hover:bg-slate-800">
+          <span class="dark:hidden">🌙</span><span class="hidden dark:inline">☀️</span>
+        </button>
+        <button id="wallet-btn" class="bg-indigo-600 hover:bg-indigo-700 text-white text-sm font-semibold rounded-xl px-4 py-2 shadow-sm shadow-indigo-200 dark:shadow-none">
           🪪 Minha carteira
         </button>
         <button id="logout-btn" class="text-sm text-slate-500 hover:text-rose-600">Sair</button>
@@ -42,41 +53,47 @@
     </header>
 
     <input id="shop-search" placeholder="Buscar lojas por nome..."
-      class="w-full border border-slate-300 rounded-xl px-4 py-2.5 text-sm mb-4 focus:outline-none focus:ring-2 focus:ring-indigo-400" />
+      class="w-full border border-slate-300 dark:border-slate-600 bg-white dark:bg-slate-800 rounded-xl px-4 py-2.5 text-sm mb-4 focus:outline-none focus:ring-2 focus:ring-indigo-400" />
 
-    <div id="map" class="mb-4 border border-slate-200"></div>
+    <div id="map" class="mb-4 border border-slate-200 dark:border-slate-700"></div>
 
     <div id="shop-list" class="space-y-3"></div>
   </section>
 
   <!-- MODAL: detalhe da loja -->
   <div id="shop-detail-modal" class="hidden fixed inset-0 bg-slate-900/70 flex items-center justify-center p-4 z-50">
-    <div class="bg-white rounded-2xl p-6 w-full max-w-sm max-h-[85vh] overflow-y-auto">
+    <div class="bg-white dark:bg-slate-800 rounded-2xl p-6 w-full max-w-sm max-h-[85vh] overflow-y-auto">
       <div class="flex justify-between items-start mb-1">
         <h3 id="detail-name" class="font-bold text-lg"></h3>
-        <button id="shop-detail-close" class="text-slate-400 hover:text-slate-700 text-xl leading-none">×</button>
+        <button id="shop-detail-close" class="text-slate-400 hover:text-slate-700 dark:hover:text-slate-200 text-xl leading-none">×</button>
       </div>
-      <p id="detail-address" class="text-sm text-slate-500 mb-2"></p>
-      <p id="detail-description" class="text-sm text-slate-600 mb-4"></p>
-      <p id="detail-balance" class="text-sm font-semibold text-indigo-700 bg-indigo-50 rounded-lg px-3 py-2 mb-4"></p>
-      <h4 class="text-sm font-semibold text-slate-700 mb-2">🎁 Mimos disponíveis</h4>
-      <ul id="detail-rewards" class="text-sm divide-y divide-slate-100 mb-2"></ul>
+      <p id="detail-address" class="text-sm text-slate-500 dark:text-slate-400 mb-2"></p>
+      <p id="detail-description" class="text-sm text-slate-600 dark:text-slate-300 mb-4"></p>
+      <p id="detail-balance" class="text-sm font-semibold text-indigo-700 dark:text-indigo-300 bg-indigo-50 dark:bg-indigo-500/20 rounded-lg px-3 py-2 mb-4"></p>
+      <h4 class="text-sm font-semibold text-slate-700 dark:text-slate-200 mb-2">🎁 Mimos disponíveis</h4>
+      <ul id="detail-rewards" class="text-sm divide-y divide-slate-100 dark:divide-slate-700 mb-2"></ul>
       <p class="text-xs text-slate-400 mt-4">Mostre sua carteira (🪪 no topo) para o lojista ganhar ou trocar pontos aqui.</p>
     </div>
   </div>
 
   <!-- MODAL: minha carteira -->
   <div id="wallet-modal" class="hidden fixed inset-0 bg-slate-900/70 flex items-center justify-center p-4 z-50">
-    <div class="bg-white rounded-2xl p-8 w-full max-w-xs text-center">
-      <p class="text-sm text-slate-500 mb-1">Minha carteira</p>
+    <div class="bg-white dark:bg-slate-800 rounded-2xl p-8 w-full max-w-xs text-center">
+      <p class="text-sm text-slate-500 dark:text-slate-400 mb-1">Minha carteira</p>
       <h3 id="wallet-name" class="font-bold text-lg mb-4"></h3>
-      <img id="wallet-qr" alt="Meu QR Code" class="mx-auto rounded-xl border border-slate-100 mb-4" />
+      <img id="wallet-qr" alt="Meu QR Code" class="mx-auto rounded-xl border border-slate-100 dark:border-slate-700 mb-4" />
       <p class="text-xs text-slate-400 mb-4">Mostre esse QR Code no balcão da loja para ganhar ou trocar pontos.</p>
-      <button id="wallet-close" class="text-sm text-indigo-600 hover:underline">Fechar</button>
+      <button id="wallet-close" class="text-sm text-indigo-600 dark:text-indigo-400 hover:underline">Fechar</button>
     </div>
   </div>
 
   <script src="js/supabase-config.js"></script>
   <script src="js/cliente.js"></script>
+  <script>
+    document.getElementById("theme-toggle").addEventListener("click", () => {
+      const isDark = document.documentElement.classList.toggle("dark");
+      localStorage.setItem("theme", isDark ? "dark" : "light");
+    });
+  </script>
 </body>
 </html>
