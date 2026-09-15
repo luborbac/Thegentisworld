@@ -1,13 +1,13 @@
 # Mimos — MVP de Fidelidade para Negócios Locais
 
-Programa de fidelidade digital por QR Code para pequenos comércios (cafeterias, barbearias, estúdios de unhas etc.), sem maquininha e sem app. Arquitetura 100% gratuita: Supabase (Postgres + Auth) + HTML/Tailwind via CDN, hospedável de graça na Vercel/Netlify (é um site estático).
+Programa de fidelidade digital com carteira QR para pequenos comércios (cafeterias, barbearias, estúdios de unhas etc.). Arquitetura 100% gratuita: Supabase (Postgres + Auth) + HTML/Tailwind via CDN, hospedável de graça na Vercel/Netlify (é um site estático).
 
-## Como funciona
+## Como funciona (v2 — carteira digital)
 
-1. O lojista cria uma conta e sua loja em `index.html` (painel do lojista).
-2. O painel gera um QR Code único (`checkin.html?loja=<slug>`) para imprimir no balcão/mesa.
-3. O cliente final escaneia, digita o telefone e ganha pontos automaticamente — sem login, sem app.
-4. O lojista acompanha clientes, saldo de pontos e cadastra "mimos" (recompensas) resgatáveis, tudo no painel.
+1. Ao entrar em `index.html`, a pessoa escolhe se é **lojista** 🏪 ou **cliente** 🙋 e cria a conta.
+2. **Lojista** cai em `lojista.html`: cria a loja (nome, endereço, geolocalização, pontos por visita), cadastra mimos e usa o botão **"Escanear QR do cliente"** (câmera do celular/computador) para creditar pontos ou resgatar um mimo.
+3. **Cliente** cai em `cliente.html`: busca lojas por nome, vê um mapa com geolocalização (lojas próximas), abre o detalhe de cada loja (mimos disponíveis, saldo de pontos) e tem uma **carteira pessoal** com um QR Code único — é esse QR que ele mostra no balcão para o lojista escanear.
+4. Sem telefone digitado, sem app nativo: tudo roda no navegador.
 
 ## Projeto Supabase
 
@@ -18,39 +18,51 @@ Programa de fidelidade digital por QR Code para pequenos comércios (cafeterias,
 
 ## Modelo de dados
 
-| Tabela | O que guarda |
+| Tabela/View | O que guarda |
 |---|---|
-| `shops` | Lojistas (`owner_id` = usuário autenticado dono da loja) |
-| `customers` | Clientes finais de cada loja, identificados por telefone (sem precisar de login) |
+| `profiles` | Um por usuário autenticado — `role` (`lojista`/`cliente`), nome, telefone e `wallet_code` (conteúdo do QR pessoal) |
+| `shops` | Lojas — nome, endereço, `lat`/`lng` (mapa), pontos por visita |
 | `rewards` | "Mimos" — recompensas que a loja oferece por pontos |
-| `point_transactions` | Ledger de pontos ganhos/resgatados por cliente |
-| `customer_balances` | View com o saldo atual de pontos por cliente |
+| `shop_members` | Vínculo cliente ↔ loja (criado no primeiro scan) |
+| `point_transactions` | Ledger de pontos ganhos/resgatados |
+| `customer_balances` | View com o saldo atual de pontos por cliente/loja |
 
 ## Segurança (RLS)
 
-- Cada lojista só enxerga/edita os dados da **sua própria loja** (`auth.uid() = owner_id`, propagado via `shop_id` nas demais tabelas).
-- Nenhuma tabela é exposta à chave pública (`anon`). O único caminho de escrita/leitura pública é por duas funções `SECURITY DEFINER` explícitas e auditadas:
-  - `get_shop_public(slug)` — retorna só nome/slug/pontos por check-in (sem dados sensíveis), usada pela página de check-in para identificar a loja.
-  - `checkin_public(slug, telefone, nome)` — faz upsert do cliente e credita os pontos do check-in.
-- `get_advisors` (Supabase) foi rodado após as migrations; o único item de nível `ERROR` (view rodando com privilégios do dono) foi corrigido com `security_invoker = true`. Os avisos restantes (`WARN`) são sobre as duas funções públicas acima — comportamento intencional, pois são a API pública por desenho.
+- Cada lojista só enxerga/edita os dados da **sua própria loja**; cada cliente só vê o **próprio perfil, carteira e histórico**.
+- Nenhuma tabela sensível é exposta à chave pública (`anon`). A API pública é só um conjunto de funções `SECURITY DEFINER` auditadas:
+  - `list_shops_public` / `get_shop_public` — descoberta de lojas (busca + mapa), sem dados sensíveis.
+  - `scan_wallet` — resolve o QR escaneado para nome/telefone do cliente; só funciona se quem chama for dono de alguma loja.
+  - `add_points_via_scan` / `redeem_reward_via_scan` — creditam/resgatam pontos; validam internamente que a loja pertence a quem chama antes de agir.
+  - `get_my_wallet` — o próprio cliente busca seu `wallet_code` para gerar o QR pessoal.
+- `get_advisors` (Supabase) foi rodado após cada migration; os únicos avisos restantes são sobre essas funções públicas por desenho (`WARN`, esperado) e o toggle de "leaked password protection" do Supabase Auth (configurável no painel, fora do escopo do schema).
 
 ## Arquivos
 
 ```
 loyalty-mvp/
-├── index.html          # Painel do lojista (auth, clientes, mimos, pontos, QR Code)
-├── checkin.html         # Página pública de check-in (aberta ao escanear o QR Code)
-├── schema.sql            # Tabelas, view e funções (espelha o que foi aplicado no Supabase)
-├── rls_policies.sql      # Políticas de Row Level Security
+├── index.html            # Entrada: escolha de papel + login/cadastro
+├── lojista.html           # Painel do lojista (scanner, clientes, mimos, config.)
+├── cliente.html            # App do cliente (busca, mapa, carteira/QR pessoal)
+├── schema.sql              # Tabelas, view e funções (espelha o Supabase)
+├── rls_policies.sql        # Políticas de Row Level Security
 └── js/
-    ├── supabase-config.js  # URL + chave pública (publishable) do projeto
-    ├── dashboard.js         # Lógica do painel do lojista
-    └── checkin.js           # Lógica da página de check-in do cliente
+    ├── supabase-config.js  # URL + chave pública do projeto
+    ├── auth.js              # Login/cadastro com escolha de papel
+    ├── qr-scanner.js         # Leitura de QR via câmera (jsQR)
+    ├── lojista.js             # Lógica do painel do lojista
+    └── cliente.js              # Lógica do app do cliente (mapa, busca, carteira)
 ```
 
-## Rodando localmente
+## Bibliotecas usadas (todas gratuitas, sem chave de API)
 
-Como é um site estático, basta servir a pasta `loyalty-mvp/`:
+- **Tailwind CSS** via CDN — estilo.
+- **Leaflet.js + OpenStreetMap** — mapa e marcadores das lojas (sem Google Maps, sem cobrança).
+- **jsQR** — leitura de QR Code direto da câmera, client-side.
+- **api.qrserver.com** — geração de imagem do QR Code (carteira do cliente).
+- **Geolocation API do navegador** — "usar minha localização" (lojista) e "lojas perto de mim" (cliente); cálculo de distância é feito localmente (fórmula de Haversine), sem serviço pago de geocodificação.
+
+## Rodando localmente
 
 ```bash
 cd loyalty-mvp && python3 -m http.server 8080
@@ -59,11 +71,11 @@ cd loyalty-mvp && python3 -m http.server 8080
 
 ## Deploy gratuito
 
-Suba a pasta `loyalty-mvp/` na [Vercel](https://vercel.com/) (ou Netlify) como site estático — nenhuma variável de ambiente é necessária, a chave pública já está em `js/supabase-config.js` (é segura para expor no client; o acesso real é controlado pelo RLS no banco).
+Suba a pasta `loyalty-mvp/` na Vercel ou Netlify como site estático (arrastar-e-soltar ou linkar o repositório) — nenhuma variável de ambiente é necessária, a chave pública já está em `js/supabase-config.js` (segura para expor no client; o acesso real é controlado pelo RLS no banco).
 
 ## Próximos passos sugeridos
 
-- Tela de resgate de mimos (debitar pontos ao trocar por uma recompensa).
-- Confirmação de e-mail/telefone antes do primeiro check-in, para reduzir abuso.
-- Métricas simples de retenção (clientes que voltaram no mês).
+- Histórico de transações visível para o cliente (extrato de pontos).
+- Avaliações/fotos das lojas na busca do cliente.
+- Notificação ao lojista quando um cliente estiver perto de resgatar um mimo.
 - Cobrança da mensalidade do lojista (ex: Stripe) quando sair do MVP gratuito.
