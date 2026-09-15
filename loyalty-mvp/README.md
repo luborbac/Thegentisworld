@@ -2,6 +2,16 @@
 
 Programa de fidelidade digital com carteira QR para pequenos comércios (cafeterias, barbearias, estúdios de unhas etc.). Arquitetura 100% gratuita: Supabase (Postgres + Auth) + HTML/Tailwind via CDN, hospedável de graça na Vercel/Netlify (é um site estático).
 
+## Links úteis
+
+- **Site em produção:** https://mimos-fidelidade-mvp.netlify.app
+- **PR de desenvolvimento:** https://github.com/luborbac/Thegentisworld/pull/2
+- **Repositório de deploy (Netlify):** https://github.com/luborbac/mimos-fidelidade-mvp1
+- **Painel Netlify:** https://app.netlify.com/projects/mimos-fidelidade-mvp
+- **Projeto Supabase:** https://supabase.com/dashboard/project/kyopaqxmkgqhgrngjjzm
+- **Task ClickUp:** https://app.clickup.com/t/86e391h17
+- **Histórico de versões:** ver `CHANGELOG.md`
+
 ## Como funciona (v2 — carteira digital)
 
 1. Ao entrar em `index.html`, a pessoa escolhe se é **lojista** 🏪 ou **cliente** 🙋 e cria a conta.
@@ -72,6 +82,25 @@ cd loyalty-mvp && python3 -m http.server 8080
 ## Deploy gratuito
 
 Suba a pasta `loyalty-mvp/` na Vercel ou Netlify como site estático (arrastar-e-soltar ou linkar o repositório) — nenhuma variável de ambiente é necessária, a chave pública já está em `js/supabase-config.js` (segura para expor no client; o acesso real é controlado pelo RLS no banco).
+
+## Topologia de deploy (2 repositórios — importante)
+
+Este projeto vive em **dois** repositórios GitHub com papéis diferentes:
+
+| Repositório | Papel |
+|---|---|
+| [`luborbac/Thegentisworld`](https://github.com/luborbac/Thegentisworld), pasta `loyalty-mvp/` | **Fonte de verdade.** Todo o desenvolvimento acontece aqui, via [PR #2](https://github.com/luborbac/Thegentisworld/pull/2). |
+| [`luborbac/mimos-fidelidade-mvp1`](https://github.com/luborbac/mimos-fidelidade-mvp1) | **Espelho de deploy.** É o repo que o Netlify observa (`main` = auto-publish). Criado pelo próprio painel do Netlify ("Link to a Git repository"). |
+
+**Por quê dois repos?** O Netlify só linka um site a um repositório próprio dele; `Thegentisworld` é um repositório maior (tem outros projetos, como o GENTIS) e não fazia sentido publicar o repositório inteiro. A solução foi manter o código real em `loyalty-mvp/` dentro de `Thegentisworld` e replicar o **conteúdo** desse diretório (sem o prefixo de pasta) na raiz do repo de deploy.
+
+**Fluxo para publicar uma mudança:**
+1. Editar/commitar em `Thegentisworld` (pasta `loyalty-mvp/`), normalmente.
+2. Copiar o conteúdo atualizado de `loyalty-mvp/` para a raiz do clone de `mimos-fidelidade-mvp1`.
+3. Commit + `git push origin main` nesse segundo repo.
+4. Netlify detecta o push e publica automaticamente em `mimos-fidelidade-mvp.netlify.app` (leva poucos segundos).
+
+Não há CI automatizando esse espelhamento ainda — é manual a cada rodada de mudanças. Ver `CHANGELOG.md` para o histórico de quando cada sincronização aconteceu.
 
 ## Próximos passos sugeridos
 
