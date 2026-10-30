@@ -141,5 +141,5 @@
   <button class="btn btn-perigo" type="submit">Excluir texto</button>
 </form>
 <% } %>
-<script src="/static/js/editor.js" defer></script>
+<script src="/static/js/editor.js?v=<%= locals.v || 1 %>" defer></script>
 <%- include('_fim') %>

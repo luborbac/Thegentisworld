@@ -11,6 +11,9 @@ const PRODUCTION = process.env.NODE_ENV === 'production';
 // Endereço da redação. Em produção, troque por algo difícil de adivinhar (ex.: /redacao-7f3k).
 const ADMIN_PATH = '/' + String(process.env.ADMIN_PATH || 'redacao').replace(/^\/+|\/+$/g, '');
 
+// Muda a cada publicação: força o navegador a baixar CSS/JS novos.
+const VERSAO = (process.env.VERCEL_GIT_COMMIT_SHA || String(Date.now())).slice(0, 8);
+
 const app = express();
 app.disable('x-powered-by');
 app.set('view engine', 'ejs');
@@ -56,6 +59,7 @@ app.use(async (req, res, next) => {
   res.locals.c = content;
   res.locals.adminPath = ADMIN_PATH;
   res.locals.path = req.path;
+  res.locals.v = VERSAO;
   next();
 });
 
