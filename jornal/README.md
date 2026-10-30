@@ -7,19 +7,24 @@ Site de jornalismo independente de opinião, assinado por Luciana Borba.
 
 Nome: **Viés Independente**. Para trocar nome, slogan ou cor, entre na redação e vá em **Configurações**.
 
+## No ar
+
+- Site: https://vies-independente.vercel.app
+- Redação: https://vies-independente.vercel.app/redacao
+
+Hospedagem gratuita: **Vercel** (o site, servidor em São Paulo) + **Supabase** (o banco Postgres, em São Paulo).
+Cada `git push` na branch publicada gera uma nova versão.
+
 ## Rodar no computador
 
-Requer Node.js 20 ou mais novo.
+Requer Node.js 22 e um Postgres. Crie o banco com `sql/schema.sql`.
 
 ```bash
 cd jornal
 npm install
-npm run senha      # cria a usuária e a senha da redação
-npm start
+DATABASE_URL=postgres://usuario:senha@localhost:5432/banco npm run senha
+DATABASE_URL=postgres://usuario:senha@localhost:5432/banco npm start
 ```
-
-- Site: http://localhost:3000
-- Redação: http://localhost:3000/redacao
 
 ## Escrevendo
 
@@ -50,7 +55,7 @@ npm start
 - Proteção contra CSRF (token em todo formulário e checagem de origem).
 - O corpo dos textos passa por um filtro que remove scripts, `onclick`, `iframe`, links `javascript:` etc.
 - Política de segurança de conteúdo (CSP) estrita, sem scripts inline. Proteção contra o site ser embutido em outro (clickjacking).
-- Uploads: só imagens de verdade (o conteúdo do arquivo é conferido, não a extensão), até 8 MB, com nome aleatório.
+- Uploads: só imagens de verdade (o conteúdo do arquivo é conferido, não a extensão), até 4 MB, com nome aleatório.
 - A redação não aparece em buscadores nem no `robots.txt`.
 
 ### Recomendado em produção
@@ -62,38 +67,34 @@ npm start
    ```
    Siga as instruções para cadastrar a chave no app autenticador. Para desligar: `npm run 2fa -- off`.
 3. Use uma senha longa e única, que você não usa em nenhum outro lugar. Uma frase serve.
-4. Faça backup regular da pasta `data/` (textos) e da pasta `uploads/` (imagens).
+4. Faça backup regular do banco (veja abaixo).
 
-## Publicar na internet
+## Configuração da hospedagem
 
-O site precisa de um servidor Node.js com **disco persistente**, porque os textos ficam num banco SQLite em `data/`. O GitHub Pages não serve, pois só hospeda páginas estáticas. Opções simples:
+Variáveis de ambiente (na Vercel, em Settings → Environment Variables):
 
-- **Render** (Web Service + Disk), **Railway** (com Volume) ou **Fly.io** (com Volume);
-- ou uma VPS (DigitalOcean, Hostinger, Locaweb…) com Nginx na frente.
+| Variável | Para quê |
+|---|---|
+| `DATABASE_URL` | conexão com o Postgres do Supabase, pelo pooler (`aws-1-sa-east-1.pooler.supabase.com:6543`), com o usuário próprio `jornal_app` |
+| `ADMIN_USER` | nome de usuária da redação |
+| `ADMIN_PASSWORD_HASH` | hash da senha (gerado com `npm run hash`). A senha em si nunca vai para o servidor. |
+| `NODE_ENV` | `production`: cookies seguros e HSTS |
+| `SITE_URL` | endereço oficial, usado nos links de compartilhamento e no RSS |
+| `ADMIN_PATH` | (opcional) endereço da redação, se quiser trocar `/redacao` |
 
-Variáveis de ambiente:
+**Trocar a senha:** pela tela **Senha** da redação; ou gere um novo hash com `npm run hash`, substitua `ADMIN_PASSWORD_HASH` na Vercel e publique de novo.
 
-| Variável | Para quê | Exemplo |
-|---|---|---|
-| `NODE_ENV` | ativa cookies seguros e HSTS (exige HTTPS) | `production` |
-| `PORT` | porta do servidor | `3000` |
-| `ADMIN_PATH` | endereço secreto da redação | `redacao-k7q2` |
-| `DATA_DIR` | onde fica o banco (aponte para o disco persistente) | `/var/data/db` |
-| `UPLOAD_DIR` | onde ficam as imagens (disco persistente) | `/var/data/uploads` |
-| `TRUST_PROXY` | use `1` atrás de proxy (Render, Railway, Nginx) para o bloqueio por IP funcionar | `1` |
-| `SITE_URL` | endereço oficial, usado nos links de compartilhamento e no RSS | `https://margem.com.br` |
-| `ADMIN_USER` | nome de usuária da redação | `luciana` |
-| `ADMIN_PASSWORD_HASH` | hash da senha (gerado com `npm run hash`). A senha em si nunca vai para o servidor. | `scrypt$32768$8$1$…` |
+**Banco:** as tabelas ficam no schema `jornal`, fora da API pública do Supabase. Só o usuário `jornal_app` tem acesso. As imagens também ficam no banco (até 4 MB cada, o limite da Vercel gratuita).
 
-Comandos no host: build `npm install`, start `npm start`.
-
-**Acesso da redação:** o jeito mais simples é preencher `ADMIN_USER` e `ADMIN_PASSWORD_HASH` no painel da hospedagem. Para trocar a senha, gere um novo hash com `npm run hash` e substitua a variável. Outra opção é rodar `npm run senha` no terminal do serviço. Nunca coloque a senha nem o hash em arquivos do repositório.
+**Backup:** no painel do Supabase, Database → Backups; ou `pg_dump --schema=jornal`.
 
 ## Estrutura
 
 ```
 server.js              servidor, cabeçalhos de segurança
-src/db.js              banco SQLite e configurações
+src/db.js              banco Postgres e configurações
+sql/schema.sql         criação das tabelas
+api/index.js           entrada na Vercel
 src/auth.js            senha, sessões, limite de tentativas, 2FA
 src/content.js         filtro de HTML, contagem de palavras, tipos de texto
 src/routes/public.js   vitrine
