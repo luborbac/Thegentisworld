@@ -38,6 +38,24 @@ function setAdmin(username, password) {
   db.prepare('DELETE FROM sessions').run();
 }
 
+// Permite definir o acesso pelo painel da hospedagem, sem terminal: ADMIN_USER e
+// ADMIN_PASSWORD_HASH (gerado com `npm run hash`). A senha em si nunca fica no servidor.
+function syncAdminFromEnv() {
+  const user = process.env.ADMIN_USER, hash = process.env.ADMIN_PASSWORD_HASH;
+  if (!user || !hash) return;
+  if (!/^scrypt\$\d+\$\d+\$\d+\$[A-Za-z0-9+/=]+\$[A-Za-z0-9+/=]+$/.test(hash)) {
+    console.error('ADMIN_PASSWORD_HASH inválido. Gere com: npm run hash');
+    return;
+  }
+  const atual = getAdmin();
+  if (atual && atual.username === user && atual.pass_hash === hash) return;
+  db.prepare(`INSERT INTO admin (id, username, pass_hash, updated_at) VALUES (1, ?, ?, ?)
+              ON CONFLICT(id) DO UPDATE SET username = excluded.username, pass_hash = excluded.pass_hash, updated_at = excluded.updated_at`)
+    .run(user, hash, new Date().toISOString());
+  db.prepare('DELETE FROM sessions').run();
+  console.log(`Acesso da redação definido pelas variáveis de ambiente (usuária "${user}").`);
+}
+
 function passwordProblems(password, username) {
   const p = [];
   if (password.length < 12) p.push('A senha precisa ter pelo menos 12 caracteres.');
@@ -173,7 +191,7 @@ function csrfValid(session, token) {
 }
 
 module.exports = {
-  hashPassword, verifyPassword, DUMMY_HASH, getAdmin, setAdmin, passwordProblems,
+  hashPassword, verifyPassword, DUMMY_HASH, getAdmin, setAdmin, syncAdminFromEnv, passwordProblems,
   newTotpSecret, verifyTotp,
   loginBlocked, recordFailure, clearFailures,
   createSession, loadSession, destroySession, csrfValid

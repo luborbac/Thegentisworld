@@ -5,7 +5,7 @@ Site de jornalismo independente de opinião, assinado por Luciana Borba.
 - **Vitrine (pública, sem login):** página inicial com manchete, editorias, página do texto (selo, título, linha fina, assinatura, botões de compartilhar, capa com crédito), arquivo, busca, página "Sobre" e feed RSS.
 - **Redação (privada):** uma única usuária com senha. Ali você escreve, salva rascunhos, agenda, publica, despublica e exclui textos, e configura o jornal (nome, slogan, cor, editorias, bio e foto).
 
-O nome provisório é **MARGEM**. Para trocar, entre na redação, vá em **Configurações → Nome do jornal**. Não é preciso mexer no código.
+Nome: **Viés Independente**. Para trocar nome, slogan ou cor, entre na redação e vá em **Configurações**.
 
 ## Rodar no computador
 
@@ -56,7 +56,7 @@ npm start
 ### Recomendado em produção
 
 1. **Troque o endereço da redação** para algo difícil de adivinhar, com a variável `ADMIN_PATH` (ex.: `ADMIN_PATH=redacao-k7q2`).
-2. **Ligue a verificação em duas etapas** (código do celular, como nos bancos):
+2. (Opcional) **Ligue a verificação em duas etapas** (código do celular, como nos bancos):
    ```bash
    npm run 2fa
    ```
@@ -82,9 +82,12 @@ Variáveis de ambiente:
 | `UPLOAD_DIR` | onde ficam as imagens (disco persistente) | `/var/data/uploads` |
 | `TRUST_PROXY` | use `1` atrás de proxy (Render, Railway, Nginx) para o bloqueio por IP funcionar | `1` |
 | `SITE_URL` | endereço oficial, usado nos links de compartilhamento e no RSS | `https://margem.com.br` |
-| `ADMIN_USER` / `ADMIN_PASSWORD` | só para criar a usuária sem terminal interativo (`npm run senha`); apague depois | |
+| `ADMIN_USER` | nome de usuária da redação | `luciana` |
+| `ADMIN_PASSWORD_HASH` | hash da senha (gerado com `npm run hash`). A senha em si nunca vai para o servidor. | `scrypt$32768$8$1$…` |
 
-Comandos no host: build `npm install`, start `npm start`. Depois do primeiro deploy, rode `npm run senha` no terminal do serviço.
+Comandos no host: build `npm install`, start `npm start`.
+
+**Acesso da redação:** o jeito mais simples é preencher `ADMIN_USER` e `ADMIN_PASSWORD_HASH` no painel da hospedagem. Para trocar a senha, gere um novo hash com `npm run hash` e substitua a variável. Outra opção é rodar `npm run senha` no terminal do serviço. Nunca coloque a senha nem o hash em arquivos do repositório.
 
 ## Estrutura
 

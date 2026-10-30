@@ -7,7 +7,8 @@
   "scripts": {
     "start": "node server.js",
     "senha": "node scripts/definir-senha.js",
-    "2fa": "node scripts/ativar-2fa.js"
+    "2fa": "node scripts/ativar-2fa.js",
+    "hash": "node scripts/gerar-hash.js"
   },
   "engines": {
     "node": ">=20"

@@ -13,6 +13,8 @@ const ADMIN_PATH = '/' + String(process.env.ADMIN_PATH || 'redacao').replace(/^\
 const UPLOAD_DIR = process.env.UPLOAD_DIR || path.join(__dirname, 'uploads');
 fs.mkdirSync(UPLOAD_DIR, { recursive: true });
 
+require('./src/auth').syncAdminFromEnv();
+
 const app = express();
 app.disable('x-powered-by');
 app.set('view engine', 'ejs');

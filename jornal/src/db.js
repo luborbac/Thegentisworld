@@ -60,8 +60,8 @@ CREATE INDEX IF NOT EXISTS idx_attempts ON login_attempts(ip, ts);
 `);
 
 const DEFAULT_SETTINGS = {
-  nome_jornal: 'MARGEM',
-  slogan: 'Jornalismo independente de opinião',
+  nome_jornal: 'Viés Independente',
+  slogan: 'Jornalismo de opinião, com lado e com fundamento',
   cor_destaque: '#9B1D20',
   autora_nome: 'Luciana Borba',
   autora_bio: 'Jornalista. Escreve análises e artigos de opinião sobre política, sociedade e cultura.',

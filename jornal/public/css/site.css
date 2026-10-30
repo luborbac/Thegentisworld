@@ -33,6 +33,7 @@ h1, h2, h3 { line-height: 1.08; margin: 0; }
 .hamburguer i:nth-child(2) { width: 80%; }
 .hamburguer i:nth-child(3) { width: 60%; }
 .logo { font-family: var(--logo); font-size: clamp(34px, 5vw, 56px); letter-spacing: .02em; text-transform: uppercase; text-decoration: none; line-height: 1; color: #fff; }
+.topo-barra .logo { white-space: nowrap; font-size: clamp(21px, 6.6vw, 56px); }
 .topo-direita { justify-self: end; display: flex; align-items: center; gap: 18px; }
 .topo-autora { display: flex; align-items: center; gap: 10px; text-decoration: none; font-weight: 600; }
 .topo-autora img, .avatar-letra { width: 44px; height: 44px; border-radius: 50%; object-fit: cover; border: 2px solid rgba(255,255,255,.85); }
@@ -197,4 +198,7 @@ h1, h2, h3 { line-height: 1.08; margin: 0; }
   .autora-box { flex-direction: column; align-items: flex-start; padding: 22px; }
   .sobre-cabeca { flex-direction: column; align-items: flex-start; }
   .sobre-cabeca img, .avatar-letra.enorme { width: 112px; height: 112px; font-size: 44px; }
+}
+@media (max-width: 360px) {
+  .topo-autora { display: none; }
 }
