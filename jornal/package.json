@@ -11,13 +11,16 @@
     "hash": "node scripts/gerar-hash.js"
   },
   "engines": {
-    "node": ">=20"
+    "node": "22.x"
   },
   "dependencies": {
     "ejs": "^7.0.2",
     "express": "^5.3.0",
     "multer": "^2.5.0",
     "pg": "^8.23.1",
-    "sanitize-html": "^2.18.1"
+    "sanitize-html": "2.18.1"
+  },
+  "overrides": {
+    "htmlparser2": "^8.0.2"
   }
 }
