@@ -1,0 +1,11 @@
+<article class="card <%= locals.variante || '' %>">
+  <a class="card-link" href="/texto/<%= p.slug %>">
+    <% if (p.capa) { %><div class="card-img"><img src="<%= p.capa %>" alt="" loading="lazy"></div><% } %>
+    <div class="card-corpo">
+      <p class="chapeu"><%= c.TIPOS[p.tipo] ? c.TIPOS[p.tipo].nome : '' %><% if (p.editoria) { %> · <%= p.editoria %><% } %></p>
+      <h3 class="card-titulo"><%= p.titulo %></h3>
+      <% if (locals.comResumo !== false) { %><p class="card-resumo"><%= p.subtitulo || c.excerpt(p.corpo_html, 160) %></p><% } %>
+      <p class="card-meta"><%= c.formatDate(p.publicado_em) %> · <%= c.readingMinutes(p.corpo_html) %> min de leitura</p>
+    </div>
+  </a>
+</article>

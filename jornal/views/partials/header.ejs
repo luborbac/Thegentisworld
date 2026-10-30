@@ -1,0 +1,43 @@
+<header class="topo">
+  <div class="topo-barra">
+    <button class="topo-menu" type="button" aria-expanded="false" aria-controls="gaveta" data-menu>
+      <span class="hamburguer" aria-hidden="true"><i></i><i></i><i></i></span><span class="rotulo">Menu</span>
+    </button>
+    <a class="logo" href="/" aria-label="<%= site.nome_jornal %> — página inicial"><%= site.nome_jornal %></a>
+    <div class="topo-direita">
+      <a class="topo-autora" href="/sobre">
+        <span class="rotulo"><%= site.autora_nome.split(' ')[0] %></span>
+        <% if (site.autora_foto) { %><img src="<%= site.autora_foto %>" alt="" width="36" height="36"><% } else { %><span class="avatar-letra" aria-hidden="true"><%= site.autora_nome.charAt(0) %></span><% } %>
+      </a>
+      <span class="divisor" aria-hidden="true"></span>
+      <a class="topo-busca" href="/busca" aria-label="Buscar">
+        <svg viewBox="0 0 24 24" width="24" height="24" aria-hidden="true"><circle cx="10" cy="10" r="6.5" fill="none" stroke="currentColor" stroke-width="2.6"/><path d="M15 15l6 6" stroke="currentColor" stroke-width="2.8" stroke-linecap="round"/></svg>
+      </a>
+    </div>
+  </div>
+  <nav class="editorias" aria-label="Editorias">
+    <div class="editorias-trilho">
+      <% site.lista_editorias.forEach(function (e) { %>
+        <a href="/editoria/<%= c.slugify(e) %>" class="<%= path === '/editoria/' + c.slugify(e) ? 'ativa' : '' %>"><%= e %></a>
+      <% }) %>
+      <a href="/textos" class="<%= path === '/textos' ? 'ativa' : '' %>">Todos os textos</a>
+      <a href="/sobre" class="<%= path === '/sobre' ? 'ativa' : '' %>">Sobre</a>
+    </div>
+  </nav>
+</header>
+<div class="gaveta" id="gaveta" hidden>
+  <div class="gaveta-painel" role="dialog" aria-label="Menu">
+    <button class="gaveta-fechar" type="button" data-menu-fechar aria-label="Fechar menu">×</button>
+    <form class="gaveta-busca" action="/busca" method="get" role="search">
+      <input type="search" name="q" placeholder="Buscar textos" aria-label="Buscar textos">
+    </form>
+    <p class="gaveta-titulo">Editorias</p>
+    <% site.lista_editorias.forEach(function (e) { %><a href="/editoria/<%= c.slugify(e) %>"><%= e %></a><% }) %>
+    <p class="gaveta-titulo">O jornal</p>
+    <a href="/">Página inicial</a>
+    <a href="/textos">Todos os textos</a>
+    <a href="/sobre">Sobre <%= site.autora_nome %></a>
+    <a href="/feed.xml">Feed RSS</a>
+  </div>
+</div>
+<main id="conteudo">

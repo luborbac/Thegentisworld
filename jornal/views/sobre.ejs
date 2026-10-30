@@ -1,0 +1,18 @@
+<%- include('partials/head', { pageTitle: 'Sobre' }) %>
+<%- include('partials/header') %>
+<div class="pagina sobre">
+  <div class="sobre-cabeca">
+    <% if (site.autora_foto) { %><img src="<%= site.autora_foto %>" alt="<%= site.autora_nome %>" width="160" height="160"><% } else { %><span class="avatar-letra enorme" aria-hidden="true"><%= site.autora_nome.charAt(0) %></span><% } %>
+    <div>
+      <p class="chapeu">Sobre o jornal</p>
+      <h1 class="artigo-titulo"><%= site.nome_jornal %></h1>
+      <p class="linha-fina"><%= site.slogan %>. Textos de <%= site.autora_nome %>.</p>
+    </div>
+  </div>
+  <div class="artigo-corpo">
+    <p><%= site.autora_bio %></p>
+    <p><%= site.nome_jornal %> é um espaço de jornalismo independente de opinião: editoriais, artigos, análises e crônicas assinados por <%= site.autora_nome %>. <%= total %> texto(s) publicado(s) até aqui.</p>
+    <% if (site.contato_email) { %><p>Contato: <a href="mailto:<%= site.contato_email %>"><%= site.contato_email %></a></p><% } %>
+  </div>
+</div>
+<%- include('partials/footer') %>

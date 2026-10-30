@@ -1,0 +1,22 @@
+{
+  "name": "jornal",
+  "version": "1.0.0",
+  "private": true,
+  "description": "Jornal independente de opinião — vitrine pública e redação protegida por senha",
+  "main": "server.js",
+  "scripts": {
+    "start": "node server.js",
+    "senha": "node scripts/definir-senha.js",
+    "2fa": "node scripts/ativar-2fa.js"
+  },
+  "engines": {
+    "node": ">=20"
+  },
+  "dependencies": {
+    "better-sqlite3": "^13.0.3",
+    "ejs": "^7.0.2",
+    "express": "^5.3.0",
+    "multer": "^2.5.0",
+    "sanitize-html": "^2.18.1"
+  }
+}

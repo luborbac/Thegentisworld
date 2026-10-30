@@ -1,0 +1,49 @@
+<%- include('partials/head') %>
+<%- include('partials/header') %>
+<div class="pagina">
+  <% if (!manchete) { %>
+    <section class="vazio">
+      <h1>Em breve, os primeiros textos.</h1>
+      <p><%= site.slogan %>.</p>
+    </section>
+  <% } else { %>
+    <section class="manchete">
+      <a class="manchete-link" href="/texto/<%= manchete.slug %>">
+        <div class="manchete-texto">
+          <span class="selo"><%= c.TIPOS[manchete.tipo] ? c.TIPOS[manchete.tipo].nome : '' %><% if (manchete.editoria) { %> · <%= manchete.editoria %><% } %></span>
+          <h1 class="manchete-titulo"><%= manchete.titulo %></h1>
+          <p class="linha-fina"><%= manchete.subtitulo || c.excerpt(manchete.corpo_html, 220) %></p>
+          <p class="card-meta">Por <strong><%= site.autora_nome %></strong> · <%= c.formatDate(manchete.publicado_em) %></p>
+        </div>
+        <% if (manchete.capa) { %><div class="manchete-img"><img src="<%= manchete.capa %>" alt="<%= manchete.capa_legenda %>"></div><% } %>
+      </a>
+    </section>
+
+    <% if (secundarias.length) { %>
+      <section class="grade" aria-label="Destaques">
+        <% secundarias.forEach(function (p) { %><%- include('partials/card', { p: p }) %><% }) %>
+      </section>
+    <% } %>
+
+    <% if (lista.length) { %>
+      <section class="mais">
+        <h2 class="secao-titulo">Mais textos</h2>
+        <div class="lista">
+          <% lista.forEach(function (p) { %><%- include('partials/card', { p: p, variante: 'card-linha' }) %><% }) %>
+        </div>
+        <p class="ver-todos"><a href="/textos">Ver o arquivo completo →</a></p>
+      </section>
+    <% } %>
+  <% } %>
+
+  <aside class="autora-box">
+    <% if (site.autora_foto) { %><img src="<%= site.autora_foto %>" alt="<%= site.autora_nome %>" width="88" height="88"><% } else { %><span class="avatar-letra grande" aria-hidden="true"><%= site.autora_nome.charAt(0) %></span><% } %>
+    <div>
+      <p class="chapeu">Quem escreve</p>
+      <p class="autora-nome"><%= site.autora_nome %></p>
+      <p><%= site.autora_bio %></p>
+      <a href="/sobre">Saiba mais →</a>
+    </div>
+  </aside>
+</div>
+<%- include('partials/footer') %>

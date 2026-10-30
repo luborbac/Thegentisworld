@@ -1,0 +1,145 @@
+<%- include('_topo', { pageTitle: post.id ? 'Editar texto' : 'Novo texto' }) %>
+<% const avisos = { salvo: 'Alterações salvas.', publicado: 'Texto publicado.', despublicado: 'Texto retirado do ar. Agora é um rascunho.' }; %>
+<% if (locals.aviso && avisos[aviso]) { %><div class="alerta ok"><%= avisos[aviso] %><% if (aviso === 'publicado') { %> · <a href="/texto/<%= post.slug %>" target="_blank" rel="noopener">ver no site ↗</a><% } %></div><% } %>
+<% if (erro) { %><div class="alerta erro" role="alert"><%= erro %></div><% } %>
+<script type="application/json" id="dados-editor"><%- JSON.stringify({ tipos: tipos, sugestoes: sugestoes, rascunhoId: post.id || 'novo' }).replace(/</g, '\\u003c') %></script>
+
+<form class="editor" method="post" action="<%= base %>/<%= post.id ? 'editar/' + post.id : 'novo' %>" enctype="multipart/form-data" data-editor>
+  <input type="hidden" name="_csrf" value="<%= csrf %>">
+  <textarea name="corpo_html" id="corpo_html" hidden><%= post.corpo_html %></textarea>
+
+  <div class="editor-principal">
+    <label class="campo">
+      <span class="campo-rotulo">Título <span class="contador" data-contador="titulo"></span></span>
+      <textarea name="titulo" class="in-titulo" rows="2" required data-medir="titulo" data-autogrow placeholder="Um título forte e claro"><%= post.titulo %></textarea>
+      <span class="dica"><%= sugestoes.titulo.dica %></span>
+    </label>
+    <label class="campo">
+      <span class="campo-rotulo">Linha fina (subtítulo) <span class="contador" data-contador="subtitulo"></span></span>
+      <textarea name="subtitulo" class="in-subtitulo" rows="2" data-medir="subtitulo" data-autogrow placeholder="Uma frase que complementa o título e convida à leitura"><%= post.subtitulo %></textarea>
+      <span class="dica"><%= sugestoes.subtitulo.dica %></span>
+    </label>
+
+    <div class="campo campo-texto">
+      <span class="campo-rotulo">Texto</span>
+      <div class="barra-ferramentas" role="toolbar" aria-label="Formatação">
+        <button type="button" data-cmd="bold" title="Negrito (Ctrl+B)"><b>N</b></button>
+        <button type="button" data-cmd="italic" title="Itálico (Ctrl+I)"><i>I</i></button>
+        <button type="button" data-cmd="underline" title="Sublinhado (Ctrl+U)"><u>S</u></button>
+        <span class="sep"></span>
+        <button type="button" data-bloco="h2" title="Intertítulo">Intertítulo</button>
+        <button type="button" data-bloco="h3" title="Subintertítulo">Sub</button>
+        <button type="button" data-bloco="p" title="Parágrafo normal">¶</button>
+        <button type="button" data-bloco="blockquote" title="Citação em destaque">“ Citação</button>
+        <span class="sep"></span>
+        <button type="button" data-cmd="insertUnorderedList" title="Lista">• Lista</button>
+        <button type="button" data-cmd="insertOrderedList" title="Lista numerada">1. Lista</button>
+        <button type="button" data-link title="Inserir link (Ctrl+K)">Link</button>
+        <button type="button" data-cmd="unlink" title="Remover link">Sem link</button>
+        <button type="button" data-cmd="insertHorizontalRule" title="Separador">―</button>
+        <span class="sep"></span>
+        <button type="button" data-cmd="undo" title="Desfazer (Ctrl+Z)">↶</button>
+        <button type="button" data-cmd="redo" title="Refazer">↷</button>
+        <button type="button" data-tela-cheia title="Modo foco">Foco</button>
+      </div>
+      <div id="corpo" class="corpo-editavel artigo-corpo" contenteditable="true" spellcheck="true" lang="pt-BR" aria-label="Corpo do texto"><%- post.corpo_html || '<p><br></p>' %></div>
+      <p class="dica">Sem limite de tamanho. Ao colar textos de outros programas, a formatação é limpa automaticamente; os parágrafos são mantidos. <span class="salvo-local" data-salvo-local></span></p>
+    </div>
+  </div>
+
+  <aside class="editor-lateral">
+    <section class="painel">
+      <div class="situacao">
+        <% const agendado = post.status === 'publicado' && post.publicado_em && post.publicado_em > new Date().toISOString(); %>
+        Situação:
+        <% if (agendado) { %><span class="tag tag-agendado">Agendado</span>
+        <% } else if (post.status === 'publicado') { %><span class="tag tag-publicado">Publicado</span>
+        <% } else { %><span class="tag">Rascunho</span><% } %>
+      </div>
+      <div class="botoes">
+        <% if (post.status === 'publicado') { %>
+          <button class="btn btn-primario" name="acao" value="salvar">Salvar alterações</button>
+          <button class="btn" name="acao" value="despublicar" data-confirmar="Retirar este texto do ar? Ele volta a ser rascunho.">Despublicar</button>
+        <% } else { %>
+          <button class="btn" name="acao" value="salvar">Salvar rascunho</button>
+          <button class="btn btn-primario" name="acao" value="publicar" data-confirmar="Publicar este texto agora (ou na data agendada)?">Publicar</button>
+        <% } %>
+        <% if (post.id) { %><a class="btn btn-leve" href="<%= base %>/previa/<%= post.id %>" target="_blank" rel="noopener">Pré-visualizar ↗</a><% } %>
+      </div>
+      <label class="campo">
+        <span class="campo-rotulo">Data de publicação</span>
+        <input type="datetime-local" name="publicado_em" value="<%= publicadoLocal %>">
+        <span class="dica">Horário de Brasília. Vazio = agora. Uma data futura agenda a publicação.</span>
+      </label>
+      <label class="check"><input type="checkbox" name="destaque" value="1" <%= post.destaque ? 'checked' : '' %>> Manchete da página inicial</label>
+    </section>
+
+    <section class="painel">
+      <h2>Tamanho</h2>
+      <div class="medidor" data-medidor>
+        <div class="medidor-numeros"><strong data-palavras>0</strong> palavras · <span data-caracteres>0</span> caracteres · <span data-leitura>1</span> min de leitura</div>
+        <div class="medidor-barra"><span class="faixa-ideal" data-faixa></span><span class="ponteiro" data-ponteiro></span></div>
+        <p class="medidor-status" data-medidor-status></p>
+      </div>
+    </section>
+
+    <section class="painel">
+      <h2>Classificação</h2>
+      <label class="campo">
+        <span class="campo-rotulo">Tipo de texto</span>
+        <select name="tipo" data-tipo>
+          <% Object.keys(tipos).forEach(function (k) { %>
+            <option value="<%= k %>" <%= post.tipo === k ? 'selected' : '' %>><%= tipos[k].nome %> (<%= tipos[k].min.toLocaleString('pt-BR') %>–<%= tipos[k].max.toLocaleString('pt-BR') %> palavras)</option>
+          <% }) %>
+        </select>
+        <span class="dica" data-tipo-dica></span>
+      </label>
+      <label class="campo">
+        <span class="campo-rotulo">Editoria</span>
+        <select name="editoria">
+          <option value="">— nenhuma —</option>
+          <% site.lista_editorias.forEach(function (e) { %><option <%= post.editoria === e ? 'selected' : '' %>><%= e %></option><% }) %>
+        </select>
+      </label>
+    </section>
+
+    <section class="painel">
+      <h2>Imagem de capa</h2>
+      <% if (post.capa) { %>
+        <img class="capa-atual" src="<%= post.capa %>" alt="">
+        <label class="check"><input type="checkbox" name="remover_capa" value="1"> Remover imagem</label>
+      <% } %>
+      <label class="campo">
+        <span class="campo-rotulo"><%= post.capa ? 'Trocar imagem' : 'Enviar imagem' %></span>
+        <input type="file" name="capa" accept="image/jpeg,image/png,image/webp,image/gif">
+        <span class="dica">JPG, PNG ou WEBP, até 8 MB. Ideal: horizontal, 1600 px de largura.</span>
+      </label>
+      <label class="campo">
+        <span class="campo-rotulo">Crédito</span>
+        <input name="capa_credito" value="<%= post.capa_credito %>" placeholder="Ex.: Paulo Pinto/Ag. Brasil" maxlength="200">
+      </label>
+      <label class="campo">
+        <span class="campo-rotulo">Legenda (opcional)</span>
+        <textarea name="capa_legenda" rows="2" maxlength="500"><%= post.capa_legenda %></textarea>
+      </label>
+    </section>
+
+    <section class="painel">
+      <h2>Endereço</h2>
+      <label class="campo">
+        <span class="campo-rotulo">Final do link</span>
+        <input name="slug" value="<%= post.slug %>" placeholder="gerado a partir do título" pattern="[a-z0-9\-]*">
+        <span class="dica">/texto/<strong><%= post.slug || 'gerado-do-titulo' %></strong> — evite mudar depois de publicado.</span>
+      </label>
+    </section>
+  </aside>
+</form>
+
+<% if (post.id) { %>
+<form class="excluir" method="post" action="<%= base %>/excluir/<%= post.id %>" data-confirmar="Excluir definitivamente “<%= post.titulo %>”? Não dá para desfazer.">
+  <input type="hidden" name="_csrf" value="<%= csrf %>">
+  <button class="btn btn-perigo" type="submit">Excluir texto</button>
+</form>
+<% } %>
+<script src="/static/js/editor.js" defer></script>
+<%- include('_fim') %>

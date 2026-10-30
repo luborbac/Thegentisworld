@@ -1,0 +1,28 @@
+<%- include('../partials/head', { pageTitle: 'Entrar', noindex: true, adminCss: true, bodyClass: 'admin login-pagina' }) %>
+<main class="login-caixa">
+  <p class="logo logo-adm"><%= site.nome_jornal %> <span>Redação</span></p>
+  <% if (semUsuaria) { %>
+    <div class="alerta erro">
+      Nenhuma usuária cadastrada ainda. No servidor, rode <code>npm run senha</code> para criar o acesso.
+    </div>
+  <% } %>
+  <% if (erro) { %><div class="alerta erro" role="alert"><%= erro %></div><% } %>
+  <form method="post" action="<%= base %>/login" autocomplete="on">
+    <input type="hidden" name="login_token" value="<%= loginToken %>">
+    <label>Usuária
+      <input name="usuario" autocomplete="username" required autofocus maxlength="60">
+    </label>
+    <label>Senha
+      <input name="senha" type="password" autocomplete="current-password" required maxlength="1024">
+    </label>
+    <% if (pedeCodigo) { %>
+    <label>Código do app autenticador
+      <input name="codigo" inputmode="numeric" pattern="[0-9]{6}" maxlength="6" autocomplete="one-time-code" required>
+    </label>
+    <% } %>
+    <button class="btn btn-primario largo" type="submit">Entrar</button>
+  </form>
+  <p class="login-nota">Área restrita. Tentativas são limitadas e registradas.</p>
+</main>
+</body>
+</html>

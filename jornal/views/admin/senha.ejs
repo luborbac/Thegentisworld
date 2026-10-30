@@ -1,0 +1,15 @@
+<%- include('_topo', { pageTitle: 'Trocar senha' }) %>
+<% if (erro) { %><div class="alerta erro"><%= erro %></div><% } %>
+<h1>Trocar senha</h1>
+<form class="form-config estreito" method="post" action="<%= base %>/senha">
+  <input type="hidden" name="_csrf" value="<%= csrf %>">
+  <section class="painel">
+    <label class="campo"><span class="campo-rotulo">Senha atual</span><input type="password" name="senha_atual" autocomplete="current-password" required></label>
+    <label class="campo"><span class="campo-rotulo">Nova senha</span><input type="password" name="senha_nova" autocomplete="new-password" minlength="12" required>
+      <span class="dica">Mínimo de 12 caracteres, com letras e números. Uma frase longa é ótima: “cafe-forte-na-varanda-2026”.</span></label>
+    <label class="campo"><span class="campo-rotulo">Repita a nova senha</span><input type="password" name="senha_confirma" autocomplete="new-password" minlength="12" required></label>
+  </section>
+  <button class="btn btn-primario" type="submit">Trocar senha</button>
+  <p class="dica">Ao trocar a senha, todas as outras sessões abertas são encerradas.</p>
+</form>
+<%- include('_fim') %>

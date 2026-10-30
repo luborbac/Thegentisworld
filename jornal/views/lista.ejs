@@ -1,0 +1,22 @@
+<%- include('partials/head', { pageTitle: titulo }) %>
+<%- include('partials/header') %>
+<div class="pagina">
+  <header class="lista-cabeca">
+    <h1 class="secao-titulo grande"><%= titulo %></h1>
+    <% if (descricao) { %><p class="lista-desc"><%= descricao %></p><% } %>
+    <% if (typeof q !== 'undefined') { %>
+      <form class="busca-form" action="/busca" method="get" role="search">
+        <input type="search" name="q" value="<%= q %>" placeholder="Buscar por palavra, tema, nome…" aria-label="Buscar" autofocus>
+        <button type="submit">Buscar</button>
+      </form>
+    <% } %>
+  </header>
+  <% if (posts.length) { %>
+    <div class="lista">
+      <% posts.forEach(function (p) { %><%- include('partials/card', { p: p, variante: 'card-linha' }) %><% }) %>
+    </div>
+  <% } else if (typeof q === 'undefined') { %>
+    <p class="vazio-curto">Ainda não há textos aqui.</p>
+  <% } %>
+</div>
+<%- include('partials/footer') %>

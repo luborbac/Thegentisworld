@@ -1,0 +1,20 @@
+</main>
+<footer class="rodape">
+  <div class="rodape-interno">
+    <div>
+      <a class="logo logo-rodape" href="/"><%= site.nome_jornal %></a>
+      <p class="rodape-slogan"><%= site.slogan %></p>
+    </div>
+    <nav class="rodape-links" aria-label="Rodapé">
+      <a href="/sobre">Sobre</a>
+      <a href="/textos">Arquivo</a>
+      <a href="/feed.xml">RSS</a>
+      <% if (site.contato_email) { %><a href="mailto:<%= site.contato_email %>">Contato</a><% } %>
+      <% if (site.link_instagram) { %><a href="<%= site.link_instagram %>" rel="noopener" target="_blank">Instagram</a><% } %>
+      <% if (site.link_x) { %><a href="<%= site.link_x %>" rel="noopener" target="_blank">X</a><% } %>
+    </nav>
+  </div>
+  <p class="rodape-nota">© <%= new Date().getFullYear() %> <%= site.nome_jornal %> · Textos de <%= site.autora_nome %>. As opiniões expressas são da autora.</p>
+</footer>
+</body>
+</html>

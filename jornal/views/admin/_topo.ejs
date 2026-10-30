@@ -1,0 +1,16 @@
+<%- include('../partials/head', { pageTitle: locals.pageTitle || 'Redação', noindex: true, adminCss: true, bodyClass: 'admin' }) %>
+<header class="adm-topo">
+  <a class="logo logo-adm" href="<%= base %>/"><%= site.nome_jornal %> <span>Redação</span></a>
+  <nav class="adm-nav">
+    <a href="<%= base %>/novo" class="btn btn-primario">+ Novo texto</a>
+    <a href="<%= base %>/">Textos</a>
+    <a href="<%= base %>/configuracoes">Configurações</a>
+    <a href="<%= base %>/senha">Senha</a>
+    <a href="/" target="_blank" rel="noopener">Ver site ↗</a>
+    <form action="<%= base %>/sair" method="post" class="inline">
+      <input type="hidden" name="_csrf" value="<%= csrf %>">
+      <button type="submit" class="link-btn">Sair</button>
+    </form>
+  </nav>
+</header>
+<main class="adm-main">

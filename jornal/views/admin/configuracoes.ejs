@@ -1,0 +1,32 @@
+<%- include('_topo', { pageTitle: 'Configurações' }) %>
+<% if (aviso) { %><div class="alerta ok">Configurações salvas.</div><% } %>
+<% if (erro) { %><div class="alerta erro"><%= erro %></div><% } %>
+<h1>Configurações do jornal</h1>
+<form class="form-config" method="post" action="<%= base %>/configuracoes" enctype="multipart/form-data">
+  <input type="hidden" name="_csrf" value="<%= csrf %>">
+  <section class="painel">
+    <h2>Identidade</h2>
+    <label class="campo"><span class="campo-rotulo">Nome do jornal</span><input name="nome_jornal" value="<%= site.nome_jornal %>" required maxlength="40"></label>
+    <label class="campo"><span class="campo-rotulo">Slogan</span><input name="slogan" value="<%= site.slogan %>" maxlength="120"></label>
+    <label class="campo"><span class="campo-rotulo">Cor de destaque</span><input type="color" name="cor_destaque" value="<%= site.cor_destaque %>"></label>
+    <label class="campo"><span class="campo-rotulo">Editorias (separadas por vírgula)</span><input name="editorias" value="<%= site.editorias %>"><span class="dica">Aparecem no menu do site, nesta ordem.</span></label>
+  </section>
+  <section class="painel">
+    <h2>Autora</h2>
+    <label class="campo"><span class="campo-rotulo">Nome de assinatura</span><input name="autora_nome" value="<%= site.autora_nome %>" required></label>
+    <label class="campo"><span class="campo-rotulo">Minibiografia</span><textarea name="autora_bio" rows="4"><%= site.autora_bio %></textarea></label>
+    <% if (site.autora_foto) { %>
+      <img class="foto-autora" src="<%= site.autora_foto %>" alt="">
+      <label class="check"><input type="checkbox" name="remover_foto" value="1"> Remover foto</label>
+    <% } %>
+    <label class="campo"><span class="campo-rotulo">Foto (quadrada, de preferência)</span><input type="file" name="autora_foto" accept="image/jpeg,image/png,image/webp"></label>
+  </section>
+  <section class="painel">
+    <h2>Contato e redes</h2>
+    <label class="campo"><span class="campo-rotulo">E-mail de contato (público)</span><input type="email" name="contato_email" value="<%= site.contato_email %>"></label>
+    <label class="campo"><span class="campo-rotulo">Instagram (link https://)</span><input type="url" name="link_instagram" value="<%= site.link_instagram %>"></label>
+    <label class="campo"><span class="campo-rotulo">X / Twitter (link https://)</span><input type="url" name="link_x" value="<%= site.link_x %>"></label>
+  </section>
+  <button class="btn btn-primario" type="submit">Salvar configurações</button>
+</form>
+<%- include('_fim') %>

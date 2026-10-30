@@ -1,0 +1,47 @@
+<%- include('_topo', { pageTitle: 'Textos' }) %>
+<% const avisos = { excluido: 'Texto excluído.', senha: 'Senha alterada. As outras sessões foram encerradas.' }; %>
+<% if (aviso && avisos[aviso]) { %><div class="alerta ok"><%= avisos[aviso] %></div><% } %>
+<div class="adm-cabeca">
+  <h1>Textos</h1>
+  <nav class="filtros">
+    <a href="<%= base %>/" class="<%= !filtro ? 'ativo' : '' %>">Todos (<%= contagem.rascunho + contagem.publicado %>)</a>
+    <a href="<%= base %>/?status=publicado" class="<%= filtro === 'publicado' ? 'ativo' : '' %>">Publicados (<%= contagem.publicado %>)</a>
+    <a href="<%= base %>/?status=rascunho" class="<%= filtro === 'rascunho' ? 'ativo' : '' %>">Rascunhos (<%= contagem.rascunho %>)</a>
+  </nav>
+</div>
+<% if (!posts.length) { %>
+  <div class="vazio-adm">
+    <p>Nenhum texto aqui ainda.</p>
+    <a href="<%= base %>/novo" class="btn btn-primario">Escrever o primeiro</a>
+  </div>
+<% } else { %>
+<table class="tabela">
+  <thead><tr><th>Título</th><th>Tipo</th><th>Situação</th><th>Palavras</th><th>Atualizado</th><th></th></tr></thead>
+  <tbody>
+  <% posts.forEach(function (p) {
+       const agendado = p.status === 'publicado' && p.publicado_em > new Date().toISOString(); %>
+    <tr>
+      <td class="t-titulo">
+        <a href="<%= base %>/editar/<%= p.id %>"><%= p.titulo %></a>
+        <% if (p.destaque) { %><span class="tag tag-destaque">Manchete</span><% } %>
+        <% if (p.editoria) { %><small><%= p.editoria %></small><% } %>
+      </td>
+      <td><%= c.TIPOS[p.tipo] ? c.TIPOS[p.tipo].nome : p.tipo %></td>
+      <td>
+        <% if (agendado) { %><span class="tag tag-agendado">Agendado · <%= c.formatDate(p.publicado_em) %></span>
+        <% } else if (p.status === 'publicado') { %><span class="tag tag-publicado">Publicado</span>
+        <% } else { %><span class="tag">Rascunho</span><% } %>
+      </td>
+      <td><%= c.wordCount(p.corpo_html).toLocaleString('pt-BR') %></td>
+      <td><%= c.formatDate(p.atualizado_em) %></td>
+      <td class="t-acoes">
+        <a href="<%= base %>/editar/<%= p.id %>">Editar</a>
+        <a href="<%= base %>/previa/<%= p.id %>" target="_blank" rel="noopener">Prévia</a>
+        <% if (p.status === 'publicado' && !agendado) { %><a href="/texto/<%= p.slug %>" target="_blank" rel="noopener">Ver</a><% } %>
+      </td>
+    </tr>
+  <% }) %>
+  </tbody>
+</table>
+<% } %>
+<%- include('_fim') %>
