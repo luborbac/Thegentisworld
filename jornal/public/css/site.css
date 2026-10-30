@@ -9,6 +9,8 @@
   --sans: 'Archivo', system-ui, -apple-system, 'Segoe UI', sans-serif;
   --serif: 'Source Serif 4', Georgia, 'Times New Roman', serif;
   --logo: 'Metal Mania', 'Anton', Impact, sans-serif;
+  --logo-escala: 1.3;
+  --logo-tamanho: 1;
   --larg: 1140px;
 }
 
@@ -33,9 +35,9 @@ h1, h2, h3 { line-height: 1.08; margin: 0; }
 .hamburguer i:nth-child(2) { width: 80%; }
 .hamburguer i:nth-child(3) { width: 60%; }
 .logo { font-family: var(--logo); font-size: clamp(34px, 5vw, 56px); letter-spacing: .02em; text-transform: uppercase; text-decoration: none; line-height: 1; color: #fff; }
-.topo-barra .logo { white-space: nowrap; font-size: clamp(22px, 6.4vw, 54px); }
-/* Letras esticadas na vertical, como no pixo reto. */
-.topo-barra .logo, .logo-rodape { display: inline-block; font-weight: 400; letter-spacing: .04em; transform: scaleY(1.3); transform-origin: center; }
+.topo-barra .logo { white-space: nowrap; font-size: calc(clamp(21px, 5.9vw, 54px) * var(--logo-tamanho)); }
+/* A fonte e o quanto as letras são esticadas vêm da redação (tema.css). */
+.topo-barra .logo, .logo-rodape { display: inline-block; font-weight: 400; letter-spacing: .04em; transform: scaleY(var(--logo-escala)); transform-origin: center; }
 .topo-direita { justify-self: end; display: flex; align-items: center; gap: 18px; }
 .topo-autora { display: flex; align-items: center; gap: 10px; text-decoration: none; font-weight: 600; }
 .topo-autora img, .avatar-letra { width: 44px; height: 44px; border-radius: 50%; object-fit: cover; border: 2px solid rgba(255,255,255,.85); }
@@ -166,7 +168,7 @@ h1, h2, h3 { line-height: 1.08; margin: 0; }
 /* ---------- Rodapé ---------- */
 .rodape { background: var(--ink); color: #C9CFDA; margin-top: 40px; padding: 48px clamp(16px, 3vw, 44px) 28px; }
 .rodape-interno { max-width: calc(var(--larg) - 48px); margin: 0 auto; display: flex; justify-content: space-between; align-items: flex-start; flex-wrap: wrap; gap: 24px; }
-.logo-rodape { font-size: 40px; }
+.logo-rodape { font-size: calc(40px * var(--logo-tamanho)); }
 .rodape-slogan { margin: 8px 0 0; }
 .rodape-links { display: flex; flex-wrap: wrap; gap: 22px; }
 .rodape-links a { text-decoration: none; font-weight: 600; color: #fff; }

@@ -49,6 +49,7 @@ const DEFAULT_SETTINGS = {
   nome_jornal: 'Viés Independente',
   slogan: 'Jornalismo de opinião, com lado e com fundamento',
   cor_destaque: '#9B1D20',
+  fonte_logo: 'metal-mania',
   autora_nome: 'Luciana Borba',
   autora_bio: 'Jornalista. Escreve análises e artigos de opinião sobre política, sociedade e cultura.',
   autora_foto: '',

@@ -128,3 +128,16 @@ body.admin { background: #F1F2F5; }
   .tabela tr { border-bottom: 1px solid var(--line); padding: 8px 0; }
   .tabela td { border: 0; padding: 4px 16px; }
 }
+
+/* Escolha da fonte do nome */
+.escolha-fonte { border: 0; padding: 0; margin: 0 0 18px; }
+.fontes-grade { display: grid; grid-template-columns: repeat(auto-fill, minmax(230px, 1fr)); gap: 10px; }
+.fonte-opcao { position: relative; display: flex; flex-direction: column; border: 2px solid var(--line); border-radius: 10px; overflow: hidden; cursor: pointer; background: #fff; }
+.fonte-opcao input { position: absolute; opacity: 0; pointer-events: none; }
+.fonte-opcao:hover { border-color: #B8BEC9; }
+.fonte-opcao:has(input:checked) { border-color: var(--ink); box-shadow: 0 0 0 2px var(--ink); }
+.fonte-opcao:has(input:focus-visible) { outline: 2px solid var(--ink); outline-offset: 2px; }
+.fonte-amostra { background: var(--accent); color: #fff; height: 76px; display: grid; place-items: center; overflow: hidden; padding: 0 10px; }
+.fonte-amostra > span { display: inline-block; text-transform: uppercase; letter-spacing: .04em; white-space: nowrap; line-height: 1; }
+.fonte-legenda { font-size: 13px; padding: 8px 10px; color: var(--ink-2); line-height: 1.35; }
+.fonte-legenda strong { color: var(--ink); }

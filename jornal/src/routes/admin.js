@@ -6,6 +6,7 @@ const db = require('../db');
 const { getSettings, saveSettings } = db;
 const auth = require('../auth');
 const c = require('../content');
+const { FONTES } = require('../fontes');
 
 // Aceita só imagens reais, conferindo os primeiros bytes do arquivo (não a extensão).
 function imageType(buf) {
@@ -232,7 +233,7 @@ module.exports = function adminRouter({ secure }) {
   });
 
   // ---------- Configurações do jornal ----------
-  router.get('/configuracoes', (req, res) => res.render('admin/configuracoes', { erro: null, aviso: req.query.ok }));
+  router.get('/configuracoes', (req, res) => res.render('admin/configuracoes', { erro: null, aviso: req.query.ok, amostrasFontes: true }));
 
   router.post('/configuracoes', upload.single('autora_foto'), requireCsrf, async (req, res) => {
     const b = req.body, atual = await getSettings();
@@ -242,12 +243,13 @@ module.exports = function adminRouter({ secure }) {
     }
     if (!novo.nome_jornal) novo.nome_jornal = atual.nome_jornal;
     if (/^#[0-9a-fA-F]{6}$/.test(b.cor_destaque || '')) novo.cor_destaque = b.cor_destaque;
+    if (FONTES.some(f => f.id === b.fonte_logo)) novo.fonte_logo = b.fonte_logo;
     for (const k of ['link_instagram', 'link_x']) if (novo[k] && !/^https:\/\//.test(novo[k])) novo[k] = '';
     try {
       const foto = await saveImage(req.file);
       if (foto) { await removeImage(atual.autora_foto); novo.autora_foto = foto; }
     } catch (e) {
-      return res.status(400).render('admin/configuracoes', { erro: e.userMessage, aviso: null });
+      return res.status(400).render('admin/configuracoes', { erro: e.userMessage, aviso: null, amostrasFontes: true });
     }
     if (b.remover_foto === '1' && !req.file?.size) { await removeImage(atual.autora_foto); novo.autora_foto = ''; }
     await saveSettings(novo);

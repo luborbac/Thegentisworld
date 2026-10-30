@@ -8,6 +8,19 @@
     <h2>Identidade</h2>
     <label class="campo"><span class="campo-rotulo">Nome do jornal</span><input name="nome_jornal" value="<%= site.nome_jornal %>" required maxlength="40"></label>
     <label class="campo"><span class="campo-rotulo">Slogan</span><input name="slogan" value="<%= site.slogan %>" maxlength="120"></label>
+    <fieldset class="campo escolha-fonte">
+      <legend class="campo-rotulo">Fonte do nome do jornal</legend>
+      <div class="fontes-grade">
+        <% fontes.FONTES.forEach(function (f) { %>
+          <label class="fonte-opcao">
+            <input type="radio" name="fonte_logo" value="<%= f.id %>" <%= fonteLogo.id === f.id ? 'checked' : '' %>>
+            <span class="fonte-amostra"><span class="fonte-<%= f.id %>"><%= site.nome_jornal %></span></span>
+            <span class="fonte-legenda"><strong><%= f.nome %></strong> · <%= f.estilo %></span>
+          </label>
+        <% }) %>
+      </div>
+      <span class="dica">A amostra usa a cor de destaque atual. Depois de salvar, abra o site para ver no topo.</span>
+    </fieldset>
     <label class="campo"><span class="campo-rotulo">Cor de destaque</span><input type="color" name="cor_destaque" value="<%= site.cor_destaque %>"></label>
     <label class="campo"><span class="campo-rotulo">Editorias (separadas por vírgula)</span><input name="editorias" value="<%= site.editorias %>"><span class="dica">Aparecem no menu do site, nesta ordem.</span></label>
   </section>

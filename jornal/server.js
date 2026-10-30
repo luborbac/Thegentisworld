@@ -5,6 +5,7 @@ const express = require('express');
 const { getSettings, DEFAULT_SETTINGS } = require('./src/db');
 const auth = require('./src/auth');
 const content = require('./src/content');
+const fontes = require('./src/fontes');
 
 const PORT = process.env.PORT || 3000;
 const PRODUCTION = process.env.NODE_ENV === 'production';
@@ -60,13 +61,23 @@ app.use(async (req, res, next) => {
   res.locals.adminPath = ADMIN_PATH;
   res.locals.path = req.path;
   res.locals.v = VERSAO;
+  res.locals.fonteLogo = fontes.fonte(res.locals.site.fonte_logo);
+  res.locals.fontes = fontes;
   next();
 });
 
 // Cor de destaque escolhida na redação, servida como CSS (a CSP não permite estilos inline).
 app.get('/tema.css', (req, res) => {
   const cor = /^#[0-9a-fA-F]{6}$/.test(res.locals.site.cor_destaque) ? res.locals.site.cor_destaque : '#9B1D20';
-  res.type('text/css').set('Cache-Control', 'no-cache').send(`:root{--accent:${cor};}`);
+  const f = res.locals.fonteLogo;
+  res.type('text/css').set('Cache-Control', 'no-cache')
+    .send(`:root{--accent:${cor};--logo:'${f.nome}','Anton',Impact,sans-serif;--logo-escala:${f.escala};--logo-tamanho:${f.tamanho};}`);
+});
+
+// Uma classe por fonte, para as amostras na tela de configurações (a CSP não permite estilos inline).
+app.get('/fontes.css', (req, res) => {
+  const css = fontes.FONTES.map(f => `.fonte-${f.id}{font-family:'${f.nome}',sans-serif;transform:scaleY(${f.escala});font-size:${Math.round(24 * f.tamanho)}px;}`).join('\n');
+  res.type('text/css').set('Cache-Control', 'public, max-age=86400').send(css);
 });
 
 app.use(ADMIN_PATH, require('./src/routes/admin')({ secure: PRODUCTION }));
@@ -81,6 +92,7 @@ app.use((err, req, res, next) => {
   if (!res.locals.site) {
     res.locals.site = { ...DEFAULT_SETTINGS, lista_editorias: DEFAULT_SETTINGS.editorias.split(',').map(s => s.trim()) };
     res.locals.c = content; res.locals.adminPath = ADMIN_PATH; res.locals.path = req.path;
+    res.locals.fonteLogo = fontes.fonte(); res.locals.fontes = fontes;
   }
   const status = err.status || err.statusCode || 500;
   res.status(status).render('erro', {
