@@ -1,26 +1,22 @@
 'use strict';
 const path = require('path');
-const fs = require('fs');
 const crypto = require('crypto');
 const express = require('express');
-const { getSettings } = require('./src/db');
+const { getSettings, DEFAULT_SETTINGS } = require('./src/db');
+const auth = require('./src/auth');
 const content = require('./src/content');
 
 const PORT = process.env.PORT || 3000;
 const PRODUCTION = process.env.NODE_ENV === 'production';
 // Endereço da redação. Em produção, troque por algo difícil de adivinhar (ex.: /redacao-7f3k).
 const ADMIN_PATH = '/' + String(process.env.ADMIN_PATH || 'redacao').replace(/^\/+|\/+$/g, '');
-const UPLOAD_DIR = process.env.UPLOAD_DIR || path.join(__dirname, 'uploads');
-fs.mkdirSync(UPLOAD_DIR, { recursive: true });
-
-require('./src/auth').syncAdminFromEnv();
 
 const app = express();
 app.disable('x-powered-by');
 app.set('view engine', 'ejs');
 app.set('views', path.join(__dirname, 'views'));
-// Atrás de um proxy (Render, Railway, Nginx…) é preciso confiar nele para saber o IP real.
-if (process.env.TRUST_PROXY) app.set('trust proxy', Number(process.env.TRUST_PROXY) || 1);
+// Atrás de um proxy (Vercel, Render, Nginx…) é preciso confiar nele para saber o IP real.
+if (process.env.TRUST_PROXY || process.env.VERCEL) app.set('trust proxy', Number(process.env.TRUST_PROXY) || 1);
 
 // Cabeçalhos de segurança em todas as respostas.
 app.use((req, res, next) => {
@@ -48,14 +44,15 @@ app.use((req, res, next) => {
 });
 
 app.use('/static', express.static(path.join(__dirname, 'public'), { maxAge: PRODUCTION ? '7d' : 0 }));
-app.use('/uploads', express.static(UPLOAD_DIR, {
-  maxAge: '30d',
-  setHeaders: res => res.set('Content-Security-Policy', "default-src 'none'; sandbox")
-}));
+
+// Na primeira requisição de cada instância, aplica o acesso definido nas variáveis de ambiente.
+let adminSincronizado = null;
 
 // Variáveis disponíveis em todos os templates.
-app.use((req, res, next) => {
-  res.locals.site = getSettings();
+app.use(async (req, res, next) => {
+  if (!adminSincronizado) adminSincronizado = auth.syncAdminFromEnv().catch(e => { adminSincronizado = null; throw e; });
+  await adminSincronizado;
+  res.locals.site = await getSettings();
   res.locals.c = content;
   res.locals.adminPath = ADMIN_PATH;
   res.locals.path = req.path;
@@ -68,7 +65,7 @@ app.get('/tema.css', (req, res) => {
   res.type('text/css').set('Cache-Control', 'no-cache').send(`:root{--accent:${cor};}`);
 });
 
-app.use(ADMIN_PATH, require('./src/routes/admin')({ uploadDir: UPLOAD_DIR, secure: PRODUCTION }));
+app.use(ADMIN_PATH, require('./src/routes/admin')({ secure: PRODUCTION }));
 app.use('/', require('./src/routes/public'));
 
 app.use((req, res) => res.status(404).render('erro', { titulo: 'Página não encontrada', mensagem: 'O endereço que você procurou não existe ou foi removido.' }));
@@ -77,17 +74,22 @@ app.use((err, req, res, next) => {
   const ref = crypto.randomBytes(4).toString('hex');
   console.error(`[erro ${ref}]`, err);
   if (res.headersSent) return next(err);
+  if (!res.locals.site) {
+    res.locals.site = { ...DEFAULT_SETTINGS, lista_editorias: DEFAULT_SETTINGS.editorias.split(',').map(s => s.trim()) };
+    res.locals.c = content; res.locals.adminPath = ADMIN_PATH; res.locals.path = req.path;
+  }
   const status = err.status || err.statusCode || 500;
   res.status(status).render('erro', {
     titulo: status === 403 ? 'Acesso negado' : status === 413 ? 'Arquivo grande demais' : 'Algo deu errado',
-    mensagem: status === 413 ? 'A imagem deve ter no máximo 8 MB.' : `Tente de novo. Código de referência: ${ref}.`
+    mensagem: status === 413 ? 'A imagem deve ter no máximo 4 MB. Reduza o tamanho (por exemplo, em squoosh.app) e tente de novo.' : `Tente de novo. Código de referência: ${ref}.`
   });
 });
 
-app.listen(PORT, () => {
-  console.log(`Jornal no ar em http://localhost:${PORT}`);
-  console.log(`Redação em http://localhost:${PORT}${ADMIN_PATH}`);
-  if (!require('./src/auth').getAdmin()) {
-    console.log('\nAinda não há usuária cadastrada. Rode:  npm run senha\n');
-  }
-});
+module.exports = app;
+
+if (require.main === module) {
+  app.listen(PORT, () => {
+    console.log(`Jornal no ar em http://localhost:${PORT}`);
+    console.log(`Redação em http://localhost:${PORT}${ADMIN_PATH}`);
+  });
+}

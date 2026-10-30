@@ -2,21 +2,22 @@
 // Liga (ou desliga) a verificação em duas etapas da redação.
 // Uso:  npm run 2fa          → gera um novo código secreto
 //       npm run 2fa -- off   → desliga
-const { db } = require('../src/db');
+const db = require('../src/db');
 const auth = require('../src/auth');
 
-const admin = auth.getAdmin();
+(async () => {
+const admin = await auth.getAdmin();
 if (!admin) { console.error('Crie a usuária antes:  npm run senha'); process.exit(1); }
 
 if (process.argv[2] === 'off') {
-  db.prepare('UPDATE admin SET totp_secret = NULL WHERE id = 1').run();
+  await db.run('UPDATE admin SET totp_secret = NULL WHERE id = 1');
   console.log('Verificação em duas etapas desligada.');
   process.exit(0);
 }
 
 const secret = auth.newTotpSecret();
-db.prepare('UPDATE admin SET totp_secret = ? WHERE id = 1').run(secret);
-db.prepare('DELETE FROM sessions').run();
+await db.run('UPDATE admin SET totp_secret = ? WHERE id = 1', [secret]);
+await db.run('DELETE FROM sessions');
 const label = encodeURIComponent(`Redação:${admin.username}`);
 console.log(`
 Verificação em duas etapas LIGADA.
@@ -36,3 +37,5 @@ Verificação em duas etapas LIGADA.
 Guarde a chave acima em lugar seguro: sem ela (ou sem o celular), só dá para entrar
 desligando a verificação no servidor com:  npm run 2fa -- off
 `);
+await db.pool.end();
+})();

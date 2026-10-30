@@ -15,7 +15,7 @@ function ask(question, hidden) {
 }
 
 (async () => {
-  const atual = auth.getAdmin();
+  const atual = await auth.getAdmin();
   let user = process.env.ADMIN_USER, pass = process.env.ADMIN_PASSWORD;
   if (!user || !pass) {
     user = (await ask(`Nome de usuária${atual ? ` [${atual.username}]` : ''}: `)).trim() || (atual && atual.username);
@@ -26,6 +26,7 @@ function ask(question, hidden) {
   if (!user || !/^[\w.@-]{3,60}$/.test(user)) { console.error('Usuária inválida (3 a 60 caracteres: letras, números, . _ - @).'); process.exit(1); }
   const problemas = auth.passwordProblems(pass, user);
   if (problemas.length) { console.error(problemas.join('\n')); process.exit(1); }
-  auth.setAdmin(user, pass);
+  await auth.setAdmin(user, pass);
+  await require('../src/db').pool.end();
   console.log(`Pronto. Usuária "${user}" salva. Todas as sessões abertas foram encerradas.`);
 })();

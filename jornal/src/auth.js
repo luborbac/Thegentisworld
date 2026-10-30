@@ -1,6 +1,6 @@
 'use strict';
 const crypto = require('crypto');
-const { db } = require('./db');
+const db = require('./db');
 
 // ---------- Senha (scrypt, com sal aleatório) ----------
 const SCRYPT = { N: 32768, r: 8, p: 1, maxmem: 128 * 1024 * 1024 };
@@ -26,33 +26,33 @@ function verifyPassword(password, stored) {
 const DUMMY_HASH = hashPassword(crypto.randomBytes(16).toString('hex'));
 
 function getAdmin() {
-  return db.prepare('SELECT * FROM admin WHERE id = 1').get();
+  return db.get('SELECT * FROM admin WHERE id = 1');
+}
+
+async function writeAdmin(username, hash) {
+  await db.run(`INSERT INTO admin (id, username, pass_hash, updated_at) VALUES (1, ?, ?, ?)
+                ON CONFLICT (id) DO UPDATE SET username = excluded.username, pass_hash = excluded.pass_hash, updated_at = excluded.updated_at`,
+  [username, hash, new Date().toISOString()]);
+  // Trocar a senha derruba todas as sessões abertas.
+  await db.run('DELETE FROM sessions');
 }
 
 function setAdmin(username, password) {
-  const now = new Date().toISOString();
-  db.prepare(`INSERT INTO admin (id, username, pass_hash, updated_at) VALUES (1, ?, ?, ?)
-              ON CONFLICT(id) DO UPDATE SET username = excluded.username, pass_hash = excluded.pass_hash, updated_at = excluded.updated_at`)
-    .run(username, hashPassword(password), now);
-  // Trocar a senha derruba todas as sessões abertas.
-  db.prepare('DELETE FROM sessions').run();
+  return writeAdmin(username, hashPassword(password));
 }
 
 // Permite definir o acesso pelo painel da hospedagem, sem terminal: ADMIN_USER e
 // ADMIN_PASSWORD_HASH (gerado com `npm run hash`). A senha em si nunca fica no servidor.
-function syncAdminFromEnv() {
+async function syncAdminFromEnv() {
   const user = process.env.ADMIN_USER, hash = process.env.ADMIN_PASSWORD_HASH;
   if (!user || !hash) return;
   if (!/^scrypt\$\d+\$\d+\$\d+\$[A-Za-z0-9+/=]+\$[A-Za-z0-9+/=]+$/.test(hash)) {
     console.error('ADMIN_PASSWORD_HASH inválido. Gere com: npm run hash');
     return;
   }
-  const atual = getAdmin();
+  const atual = await getAdmin();
   if (atual && atual.username === user && atual.pass_hash === hash) return;
-  db.prepare(`INSERT INTO admin (id, username, pass_hash, updated_at) VALUES (1, ?, ?, ?)
-              ON CONFLICT(id) DO UPDATE SET username = excluded.username, pass_hash = excluded.pass_hash, updated_at = excluded.updated_at`)
-    .run(user, hash, new Date().toISOString());
-  db.prepare('DELETE FROM sessions').run();
+  await writeAdmin(user, hash);
   console.log(`Acesso da redação definido pelas variáveis de ambiente (usuária "${user}").`);
 }
 
@@ -118,20 +118,20 @@ const WINDOW_MS = 15 * 60 * 1000;
 const MAX_PER_IP = 5;
 const MAX_GLOBAL = 50;
 
-function loginBlocked(ip) {
+async function loginBlocked(ip) {
   const since = Date.now() - WINDOW_MS;
-  db.prepare('DELETE FROM login_attempts WHERE ts < ?').run(since);
-  const perIp = db.prepare('SELECT COUNT(*) AS n FROM login_attempts WHERE ip = ? AND ts >= ?').get(ip, since).n;
-  const global = db.prepare('SELECT COUNT(*) AS n FROM login_attempts WHERE ts >= ?').get(since).n;
+  await db.run('DELETE FROM login_attempts WHERE ts < ?', [since]);
+  const perIp = (await db.get('SELECT COUNT(*)::int AS n FROM login_attempts WHERE ip = ? AND ts >= ?', [ip, since])).n;
+  const global = (await db.get('SELECT COUNT(*)::int AS n FROM login_attempts WHERE ts >= ?', [since])).n;
   return perIp >= MAX_PER_IP || global >= MAX_GLOBAL;
 }
 
 function recordFailure(ip) {
-  db.prepare('INSERT INTO login_attempts (ip, ts) VALUES (?, ?)').run(ip, Date.now());
+  return db.run('INSERT INTO login_attempts (ip, ts) VALUES (?, ?)', [ip, Date.now()]);
 }
 
 function clearFailures(ip) {
-  db.prepare('DELETE FROM login_attempts WHERE ip = ?').run(ip);
+  return db.run('DELETE FROM login_attempts WHERE ip = ?', [ip]);
 }
 
 // ---------- Sessões (token aleatório; no banco só fica o hash) ----------
@@ -144,12 +144,12 @@ function cookieName(secure) {
   return secure ? '__Host-redacao' : 'redacao';
 }
 
-function createSession(req, res, secure) {
+async function createSession(req, res, secure) {
   const token = crypto.randomBytes(32).toString('base64url');
   const csrf = crypto.randomBytes(32).toString('base64url');
   const now = Date.now();
-  db.prepare('INSERT INTO sessions (token_hash, csrf, created_at, last_seen, ip, ua) VALUES (?, ?, ?, ?, ?, ?)')
-    .run(sha256(token), csrf, now, now, req.ip, String(req.get('user-agent') || '').slice(0, 300));
+  await db.run('INSERT INTO sessions (token_hash, csrf, created_at, last_seen, ip, ua) VALUES (?, ?, ?, ?, ?, ?)',
+    [sha256(token), csrf, now, now, req.ip, String(req.get('user-agent') || '').slice(0, 300)]);
   res.cookie(cookieName(secure), token, {
     httpOnly: true, secure, sameSite: 'strict', path: '/', maxAge: ABSOLUTE_MS
   });
@@ -164,23 +164,23 @@ function readCookie(req, name) {
   return null;
 }
 
-function loadSession(req, secure) {
+async function loadSession(req, secure) {
   const token = readCookie(req, cookieName(secure));
   if (!token) return null;
-  const row = db.prepare('SELECT * FROM sessions WHERE token_hash = ?').get(sha256(token));
+  const row = await db.get('SELECT * FROM sessions WHERE token_hash = ?', [sha256(token)]);
   if (!row) return null;
   const now = Date.now();
   if (now - row.last_seen > IDLE_MS || now - row.created_at > ABSOLUTE_MS) {
-    db.prepare('DELETE FROM sessions WHERE token_hash = ?').run(row.token_hash);
+    await db.run('DELETE FROM sessions WHERE token_hash = ?', [row.token_hash]);
     return null;
   }
-  db.prepare('UPDATE sessions SET last_seen = ? WHERE token_hash = ?').run(now, row.token_hash);
+  await db.run('UPDATE sessions SET last_seen = ? WHERE token_hash = ?', [now, row.token_hash]);
   return row;
 }
 
-function destroySession(req, res, secure) {
+async function destroySession(req, res, secure) {
   const token = readCookie(req, cookieName(secure));
-  if (token) db.prepare('DELETE FROM sessions WHERE token_hash = ?').run(sha256(token));
+  if (token) await db.run('DELETE FROM sessions WHERE token_hash = ?', [sha256(token)]);
   res.clearCookie(cookieName(secure), { httpOnly: true, secure, sameSite: 'strict', path: '/' });
 }
 
